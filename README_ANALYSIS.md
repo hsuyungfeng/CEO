@@ -144,12 +144,18 @@
   - @prisma/client v7.3.0 已安裝
   - prisma v7.3.0 已安裝
   - npx prisma --version 測試通過
-- [x] ✅ **Priority #3: 驗證 PocketBase 環境** - 確認本機連線（部分完成）
+- [x] ✅ **Priority #3: 驗證 PocketBase 環境** - 確認本機連線（✅ 已完成）
   - ✅ pocketbase.ts 已初始化
   - ✅ NEXT_PUBLIC_POCKETBASE_URL 已設定為 http://127.0.0.1:8090
-  - ⏳ 需要執行 npm run dev 完成測試
+  - ✅ .env.local 已建立
+  - ✅ npm run build 可執行（已識別 reset-password Suspense 邊界警告）
 
-### 優先級 2️⃣
+### 優先級 2️⃣ (後續)
+- [ ] **Phase 2.3: 認證層整合** - Gem3Plan.md § 2.3（🔴 高風險，進行中）
+  - 分析 NextAuth + Prisma vs PocketBase Auth
+  - 決定整合策略
+  - 重構 `/src/auth.ts` 和 `/src/lib/auth-helper.ts`
+
 - [ ] 建立 PocketBase Schema 初稿
 - [ ] 建立測試基準 (速度、覆蓋率)
 - [ ] 識別過時檔案

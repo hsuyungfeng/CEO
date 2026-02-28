@@ -145,20 +145,41 @@
   - 新資料同時寫入兩個資料庫（測試用）
   - 監控並修復任何不一致
 
-#### 2.3 認證層整合
-- [ ] **關鍵風險**：NextAuth + Prisma vs PocketBase Auth
-  - 決定：繼續使用 NextAuth JWT + 自訂用戶驗證？或整合 PocketBase Auth？
-  - 推薦：保持 NextAuth，但改為透過 PocketBase 驗證用戶
+#### 2.3 認證層整合 (🔴 高風險 - 進行中)
+**狀態**：開始分析與設計（2026-02-28）
+**複雜度**：高（影響所有 41 個 API 路由）
 
-- [ ] 重構 `/src/auth.ts`
-  - 從 Prisma 用戶查詢改為 PocketBase 查詢
-  - 測試 Credentials + OAuth (Apple) 登入流程
-  - 測試 2FA/電子郵件驗證流程
+- [ ] **分析現有認證架構**
+  - [ ] 審查 `/src/auth.ts` - NextAuth v5.0.0-beta.30 設定
+  - [ ] 審查 `/src/lib/auth-helper.ts` - Bearer Token 驗證邏輯
+  - [ ] 識別所有 3 個 Prisma 用戶查詢位置（lines 67, 108, 240）
+  - [ ] 記錄當前認證流程（Desktop Session + Mobile JWT）
 
-- [ ] 更新 `/src/lib/auth-helper.ts`
-  - 用 PocketBase 取代 3 個 Prisma 查詢 (lines 67, 108, 240)
-  - 測試 Bearer Token 驗證 (移動應用)
-  - 確認所有受保護的端點仍可工作
+- [ ] **關鍵決策**：NextAuth + Prisma vs PocketBase Auth
+  - **選項 A**：保持 NextAuth，改為透過 PocketBase 驗證用戶（推薦）
+    - 優點：最小化改變，保持既有登入流程
+    - 缺點：需要 NextAuth ↔ PocketBase 轉換層
+  - **選項 B**：完全遷移至 PocketBase Auth
+    - 優點：簡化架構
+    - 缺點：需要重寫所有認證邏輯
+  - [ ] 決定並記錄選擇
+
+- [ ] **重構 `/src/auth.ts`**（根據選擇）
+  - [ ] Credentials 登入流程：從 Prisma 改為 PocketBase 查詢
+  - [ ] OAuth (Apple) 登入流程：驗證 PocketBase 整合
+  - [ ] 2FA/電子郵件驗證流程：確認相容性
+  - [ ] 密碼重設流程：測試 useSearchParams Suspense 邊界
+
+- [ ] **更新 `/src/lib/auth-helper.ts`**
+  - [ ] 用 PocketBase 取代 3 個 Prisma 查詢（lines 67, 108, 240）
+  - [ ] 測試 Bearer Token 驗證（移動應用）
+  - [ ] 確認所有受保護的端點仍可工作
+  - [ ] 更新類型定義
+
+- [ ] **測試認證層**
+  - [ ] 單元測試：各個認證方法
+  - [ ] 集成測試：完整登入 → API 呼叫流程
+  - [ ] Edge case：過期令牌、無效憑證、並發登入
 
 #### 2.4 逐路由遷移 (低風險優先)
 **第一波：已使用 PocketBase 的路由 (驗證)**
