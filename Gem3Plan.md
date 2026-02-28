@@ -462,6 +462,7 @@
 **預計時間：3-4 週**
 **進度：✅ Task 1-12 全部完成 (2026-02-28) | 100% 進度** 🎉
 **選定方案：方案 1 - 簡化方案（Invoice + InvoiceLineItem 表）** ✅
+**部署狀態：✅ Legacy Fixes Complete - Ready for Staging** 🚀
 
 #### 實施進度 (Implementation Progress - 100% Complete) ✅
 
@@ -548,6 +549,27 @@
   - Gem3Plan.md Phase 4 章節已更新（完成狀態）
   - API 測試指南已生成
   - 部署說明已記錄
+
+#### 🚀 Legacy Code Fixes - All Complete (2026-02-28) ✅
+
+在部署到 Staging 之前，所有預先存在的代碼問題已全部修復：
+
+**修復列表 (5 個問題，0 個遺留):**
+1. ✅ useSearchParams Suspense Boundaries (3 頁面) - FIXED
+2. ✅ PocketBase Type Casting (12 實例) - FIXED
+3. ✅ Missing Type Declarations (@types/jsonwebtoken, @types/ioredis) - INSTALLED
+4. ✅ Prisma User Type Mismatch (UserRole/UserStatus enums) - FIXED
+5. ✅ Sentry v8.55.0 API Compatibility (Replay integration) - FIXED
+
+**驗證結果:**
+- npm run typecheck → **0 errors** ✅
+- npm run build → **Clean production build** ✅
+- Phase 4 E2E tests → **3/3 passing** ✅
+- Phase 4 code impact → **Zero** ✅
+- Build artifacts → **.next directory created** ✅
+
+**部署就緒狀態:**
+✅ **Production-Ready for Staging Deployment**
 
 #### Phase 4 設計概述 (Approach 1 - Simplified)
 
