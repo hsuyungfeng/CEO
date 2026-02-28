@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
 
     const { billingMonth } = await request.json()
 
-    if (!billingMonth) {
+    if (!billingMonth || !/^\d{4}-\d{2}$/.test(billingMonth)) {
       return NextResponse.json(
-        { error: '計費月份為必填項' },
+        { error: 'Invalid billingMonth format. Use YYYY-MM' },
         { status: 400 }
       )
     }

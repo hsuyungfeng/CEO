@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { requireAdmin } from '@/lib/admin-auth'
 import { prisma } from '@/lib/prisma'
 
@@ -14,9 +15,14 @@ export async function GET(request: NextRequest) {
     const billingMonth = searchParams.get('billingMonth')
     const status = searchParams.get('status')
 
-    const where: any = {}
-    if (billingMonth) where.billingMonth = billingMonth
-    if (status) where.status = status
+    const validStatuses = ['DRAFT', 'SENT', 'CONFIRMED', 'PAID']
+    const where: Prisma.InvoiceWhereInput = {}
+    if (billingMonth && /^\d{4}-\d{2}$/.test(billingMonth)) {
+      where.billingMonth = billingMonth
+    }
+    if (status && validStatuses.includes(status)) {
+      where.status = status as any
+    }
 
     // 同時查詢發票總數
     const [invoices, total] = await Promise.all([
