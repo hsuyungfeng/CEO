@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum TwoFactorMethod {
@@ -178,6 +179,7 @@ model Order {
   orderNo      String      @unique
   userId       String
   status       OrderStatus @default(PENDING)
+  paymentMethod PaymentMethod @default(CASH)
   totalAmount  Decimal     @db.Decimal(10, 2)
   note         String?
   pointsEarned Int         @default(0)
@@ -413,6 +415,11 @@ enum InvoiceStatus {
   SENT       // 已發送 (等待員工確認)
   CONFIRMED  // 已確認 (員工已查看)
   PAID       // 已支付
+}
+
+enum PaymentMethod {
+  CASH
+  MONTHLY_BILLING
 }
 
 model Invoice {
