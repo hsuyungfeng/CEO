@@ -146,35 +146,42 @@
   - 監控並修復任何不一致
 
 #### 2.3 認證層整合 (🔴 高風險 - 進行中)
-**狀態**：開始分析與設計（2026-02-28）
+**狀態**：實施中（2026-02-28 開始）
 **複雜度**：高（影響所有 41 個 API 路由）
+**進度**：20% (完成: PocketBase auth 輔助函數)
 
-- [ ] **分析現有認證架構**
-  - [ ] 審查 `/src/auth.ts` - NextAuth v5.0.0-beta.30 設定
-  - [ ] 審查 `/src/lib/auth-helper.ts` - Bearer Token 驗證邏輯
-  - [ ] 識別所有 3 個 Prisma 用戶查詢位置（lines 67, 108, 240）
-  - [ ] 記錄當前認證流程（Desktop Session + Mobile JWT）
+- [x] ✅ **分析現有認證架構**
+  - [x] ✅ 審查 `/src/auth.ts` - 識別 3 個 Prisma 用戶查詢
+  - [x] ✅ 審查 `/src/lib/auth-helper.ts` - Bearer Token 驗證邏輯
+  - [x] ✅ 識別所有 Prisma 用戶查詢位置（6 個查詢）
+  - [x] ✅ 記錄當前認證流程（Desktop Session + Mobile JWT）
 
-- [ ] **關鍵決策**：NextAuth + Prisma vs PocketBase Auth
-  - **選項 A**：保持 NextAuth，改為透過 PocketBase 驗證用戶（推薦）
-    - 優點：最小化改變，保持既有登入流程
-    - 缺點：需要 NextAuth ↔ PocketBase 轉換層
-  - **選項 B**：完全遷移至 PocketBase Auth
-    - 優點：簡化架構
-    - 缺點：需要重寫所有認證邏輯
-  - [ ] 決定並記錄選擇
+- [x] ✅ **關鍵決策：選項 A 已確認**
+  - [x] ✅ 保持 NextAuth，改為透過 PocketBase 驗證用戶
+  - [x] ✅ 決定已記錄
+
+- [x] ✅ **建立 PocketBase 認證輔助函數** (`/src/lib/pocketbase-auth.ts`)
+  - [x] ✅ PBUser 類型定義
+  - [x] ✅ PBOAuthAccount 類型定義
+  - [x] ✅ findUserByTaxId() - Credentials 登入查詢
+  - [x] ✅ findUserByEmail() - OAuth 登入查詢
+  - [x] ✅ findUserById() - Bearer Token 查詢
+  - [x] ✅ OAuth 帳戶管理函數（findOAuthAccount, createOAuthAccount, updateOAuthAccount）
+  - [x] ✅ 臨時 OAuth 管理函數（createTempOAuth, getTempOAuth, deleteTempOAuth）
+  - [x] ✅ 用戶管理函數（createUser, updateUser, verifyPassword）
 
 - [ ] **重構 `/src/auth.ts`**（根據選擇）
-  - [ ] Credentials 登入流程：從 Prisma 改為 PocketBase 查詢
-  - [ ] OAuth (Apple) 登入流程：驗證 PocketBase 整合
-  - [ ] 2FA/電子郵件驗證流程：確認相容性
-  - [ ] 密碼重設流程：測試 useSearchParams Suspense 邊界
+  - [ ] Credentials 提供者：替換 line 80 的 Prisma 查詢
+  - [ ] Google OAuth：替換 line 174、135、158、219 的查詢
+  - [ ] Apple OAuth：替換 line 286、248、271、329 的查詢
+  - [ ] 測試 3 個認證流程
 
 - [ ] **更新 `/src/lib/auth-helper.ts`**
-  - [ ] 用 PocketBase 取代 3 個 Prisma 查詢（lines 67, 108, 240）
+  - [ ] 用 PocketBase 取代 line 67 的用戶查詢
+  - [ ] 用 PocketBase 取代 line 108 的用戶查詢
+  - [ ] 用 PocketBase 取代 line 240 的用戶查詢
   - [ ] 測試 Bearer Token 驗證（移動應用）
   - [ ] 確認所有受保護的端點仍可工作
-  - [ ] 更新類型定義
 
 - [ ] **測試認證層**
   - [ ] 單元測試：各個認證方法

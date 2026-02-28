@@ -80,18 +80,23 @@
   - 確認當前使用的支付方式 (是否真的只需 cash/monthly/points)
   - 確認搜尋功能是否有被使用
 
-- [ ] **解決 Prisma 幽靈依賴** (本週)
-  - 添加 @prisma/client 或完全移除 Prisma 腳本
-  - 驗證 `npm run db:*` 命令
+- [x] ✅ **Priority #2: 解決 Prisma 幽靈依賴** (本週)
+  - [x] ✅ 添加 @prisma/client v7.3.0
+  - [x] ✅ npx prisma generate 執行成功
 
-- [ ] **開始第 1 階段：準備與清理** (下週)
-  - 建立 PocketBase 本機開發環境
-  - 設計 PocketBase Schema
-  - 建立測試基準 (速度、覆蓋率、Bundle 大小)
+- [x] ✅ **Priority #3: 驗證 PocketBase 環境** (本週)
+  - [x] ✅ 建立 .env.local
+  - [x] ✅ npm run build 可執行
 
-- [ ] **平行進行：Schema 設計與遷移腳本** (下週)
-  - 與技術團隊設計完整的 PocketBase 集合
-  - 原型化 PostgreSQL → PocketBase 遷移腳本
+- 🔥 **Phase 2.3: 認證層整合** (進行中 - 20%)
+  - [x] ✅ 分析現有認證架構
+  - [x] ✅ 建立 `/src/lib/pocketbase-auth.ts` (20+ 個函數)
+  - ⏳ **下一步**：遷移 `/src/auth.ts` (Credentials + OAuth)
+
+⏳ **下週計劃**：
+- [ ] 完成 Phase 2.3: 重構 `/src/auth.ts` 和 `/src/lib/auth-helper.ts`
+- [ ] 開始第 1 階段：準備與清理
+- [ ] 設計 PocketBase Schema
 
 ---
 
