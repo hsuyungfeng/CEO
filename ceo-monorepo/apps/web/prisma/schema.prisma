@@ -455,6 +455,10 @@ model Invoice {
 
   invoiceFormat String @default("simple")
 
+  // Phase 4.5: Group Buying 團購返利發票欄位
+  isGroupInvoice Boolean @default(false)  // 是否為團購返利發票
+  groupId        String?                   // 所屬團購 ID
+
   lineItems InvoiceLineItem[]
 
   createdAt DateTime @default(now())
@@ -463,6 +467,7 @@ model Invoice {
   @@index([userId])
   @@index([billingMonth])
   @@index([status])
+  @@index([groupId])
   @@map("invoices")
 }
 
