@@ -101,39 +101,44 @@ export async function GET(request: NextRequest) {
     // 對每個團購計算目前加入的總件數與折扣
     const groupsWithStats = await Promise.all(
       groups.map(async (g) => {
-        const memberAgg = await prisma.order.aggregate({
-          where: { groupId: g.groupId, isGroupLeader: false },
-          _sum: { groupTotalItems: true },
-          _count: { id: true },
-        })
+        try {
+          const memberAgg = await prisma.order.aggregate({
+            where: { groupId: g.groupId, isGroupLeader: false },
+            _sum: { groupTotalItems: true },
+            _count: { id: true },
+          })
 
-        const leaderQty   = g.items.reduce((s, i) => s + i.quantity, 0)
-        const memberQty   = memberAgg._sum.groupTotalItems ?? 0
-        const totalQty    = leaderQty + memberQty
-        const currentDiscount = getGroupDiscount(totalQty)
+          const leaderQty   = g.items?.reduce((s, i) => s + (i.quantity ?? 0), 0) ?? 0
+          const memberQty   = memberAgg._sum?.groupTotalItems ?? 0
+          const totalQty    = leaderQty + memberQty
+          const currentDiscount = getGroupDiscount(totalQty)
 
-        const rawProduct = g.items[0]?.product ?? null
-        const product = rawProduct
-          ? {
-              id:    rawProduct.id,
-              name:  rawProduct.name,
-              unit:  rawProduct.unit,
-              price: rawProduct.priceTiers[0]?.price ?? null,
-            }
-          : null
+          const rawProduct = g.items?.[0]?.product ?? null
+          const product = rawProduct
+            ? {
+                id:    rawProduct.id,
+                name:  rawProduct.name,
+                unit:  rawProduct.unit,
+                price: rawProduct.priceTiers?.[0]?.price ?? null,
+              }
+            : null
 
-        return {
-          groupId:         g.groupId,
-          leaderOrderId:   g.id,
-          title:           g.note ?? '團購活動',
-          company:         g.user?.name ?? '',
-          deadline:        g.groupDeadline,
-          product,
-          leaderQty,
-          memberCount:     memberAgg._count.id,
-          totalQty,
-          currentDiscount,
-          createdAt:       g.createdAt,
+          return {
+            groupId:         g.groupId,
+            leaderOrderId:   g.id,
+            title:           g.note ?? '團購活動',
+            company:         g.user?.name ?? '',
+            deadline:        g.groupDeadline,
+            product,
+            leaderQty,
+            memberCount:     memberAgg._count?.id ?? 0,
+            totalQty,
+            currentDiscount,
+            createdAt:       g.createdAt,
+          }
+        } catch (innerError) {
+          console.error('Error processing group:', g.groupId, innerError)
+          throw innerError
         }
       })
     )

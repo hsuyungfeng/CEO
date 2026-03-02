@@ -4,28 +4,28 @@ import { z } from 'zod';
 
 // 查詢參數驗證 schema
 const querySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  page: z.coerce.number().int().positive(),
+  limit: z.coerce.number().int().min(1).max(100),
   search: z.string().optional(),
   categoryId: z.string().optional(),
   featured: z.coerce.boolean().optional(),
-  sortBy: z.enum(['createdAt', 'name', 'totalSold', 'price']).default('createdAt'),
-  order: z.enum(['asc', 'desc']).default('desc'),
+  sortBy: z.enum(['createdAt', 'name', 'totalSold', 'price']),
+  order: z.enum(['asc', 'desc']),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // 解析和驗證查詢參數
+
+    // 解析和驗證查詢參數 - 直接處理 null 值
     const queryParams = {
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      search: searchParams.get('search'),
-      categoryId: searchParams.get('categoryId'),
-      featured: searchParams.get('featured'),
-      sortBy: searchParams.get('sortBy'),
-      order: searchParams.get('order'),
+      page: searchParams.get('page') || '1',
+      limit: searchParams.get('limit') || '20',
+      search: searchParams.get('search') || undefined,
+      categoryId: searchParams.get('categoryId') || undefined,
+      featured: searchParams.get('featured') || undefined,
+      sortBy: searchParams.get('sortBy') || 'createdAt',
+      order: searchParams.get('order') || 'desc',
     };
 
     const validationResult = querySchema.safeParse(queryParams);
@@ -63,11 +63,15 @@ export async function GET(request: NextRequest) {
       where.isFeatured = featured;
     }
 
-    // 團購時間檢查
+    // 團購時間檢查 - 修正：使用 AND 邏輯確保商品在有效時間內或沒有時間限制
     const now = new Date();
-    where.OR = [
-      { startDate: null, endDate: null }, // 沒有時間限制的商品
-      { startDate: { lte: now }, endDate: { gte: now } }, // 在團購時間內的商品
+    where.AND = [
+      {
+        OR: [
+          { startDate: null, endDate: null }, // 沒有時間限制的商品
+          { startDate: { lte: now }, endDate: { gte: now } }, // 在團購時間內的商品
+        ],
+      },
     ];
 
     // 排序條件

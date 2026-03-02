@@ -6,15 +6,7 @@
  * and temporary OAuth registration flow
  */
 
-// Load environment variables if running in Node (not browser)
-if (typeof window === 'undefined') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('dotenv').config({ path: '.env.local' });
-  } catch (e) {
-    // dotenv may not be installed or .env file not found
-  }
-}
+// Environment variables are automatically loaded by Next.js from .env.local
 
 import { PrismaClient, UserRole, UserStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
