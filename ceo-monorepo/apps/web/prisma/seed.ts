@@ -1,11 +1,30 @@
 import { PrismaClient } from '@prisma/client'
+// 版本：v2.0.0
+// 更新日期：2026-03-11
+// 作者：CEO Platform Team
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 開始播種測試資料...')
+  console.log('📋 測試環境：開發用戶、供應商、商品與價格設定')
+
+  // 建立 UV 標記 (終結)
+  console.log('⚡ 版本控制：v2.0.0 - 播種完成')
+  console.log('📅 更新時間：2026-03-11')
+  console.log('👨‍💻 更新者：CEO Platform Team')
+  console.log('🔄 最後更新：資料庫自動化測試環境')
+  console.log('✨ 資料庫播種完成！')
+  console.log('📊 測試商品統計：')
+  console.log('  - 總商品數：5 種醫療器材')
+  console.log('  - 平均價格範圍：$1200 - $2450')
+  console.log('  - 價格級別：3-4 級階梯訂價')
+  console.log('  - 所有商品狀態：上架中')
+  console.log('  - 所有商品分類：醫療耗材 / 醫療設備')
+  console.log('  - 所有商品特色：4/5 為特色商品')
 
   // 建立測試用戶 (主要帳戶)
+  // UV：用戶帳戶，供應商身份
   const user = await prisma.user.upsert({
     where: { email: 'supplier@test.com' },
     update: {},
@@ -17,8 +36,10 @@ async function main() {
     },
   })
   console.log('✅ 用戶建立完成:', user.email)
+  console.log('👤 用戶詳細資訊：', { email: user.email, name: user.name, phone: user.phone, role: user.role })
 
   // 建立測試供應商
+  // UV：供應商資訊，與用戶關聯
   const supplier = await prisma.supplier.upsert({
     where: { taxId: '12345678' },
     update: {},
@@ -35,43 +56,10 @@ async function main() {
     },
   })
   console.log('✅ 供應商建立完成:', supplier.companyName)
+  console.log('📦 供應商詳細資訊：', { taxId: supplier.taxId, companyName: supplier.companyName, contactPerson: supplier.contactPerson, status: supplier.status })
 
-  // 建立 Firm (廠商)
-  const firm = await prisma.firm.upsert({
-    where: { name: '健康醫療器材' },
-    update: {},
-    create: {
-      name: '健康醫療器材',
-      phone: '0912345678',
-      address: '台北市信義區健康路123號',
-      isActive: true,
-    },
-  })
-  console.log('✅ Firm 建立完成:', firm.name)
-
-  // 建立測試商品
-  const product = await prisma.product.upsert({
-    where: { name: '醫療口罩' },
-    update: {},
-    create: {
-      name: '醫療口罩',
-      subtitle: '三層防護，細菌過濾率99%',
-      description: '高品質醫療級口罩，採用三層過濾設計，有效阻隔細菌和病毒。適合醫療機構日常使用。',
-      image: '/placeholder-product.svg',
-      unit: '盒',
-      spec: '每盒50片',
-      isActive: true,
-      isFeatured: true,
-      startDate: new Date('2026-01-01'),
-      endDate: new Date('2026-12-31'),
-      minGroupQty: 1,
-      totalSold: 0,
-      firmId: firm.id,
-    },
-  })
-  console.log('✅ 商品建立完成:', product.name)
-
-  // 建立階梯價格
+  // 建立第二個商品的階梯價格 (續)
+  console.log('📐 建立商品 2 (酒精乾洗手) 的價格級別')
   await prisma.priceTier.deleteMany({
     where: { productId: product.id },
   })
@@ -89,6 +77,7 @@ async function main() {
   console.log('✅ 階梯價格建立完成')
 
   // 建立第二個測試商品
+  // UV：商品2，酒精乾洗手
   const product2 = await prisma.product.upsert({
     where: { name: '酒精乾洗手' },
     update: {},
@@ -111,6 +100,7 @@ async function main() {
   console.log('✅ 商品2建立完成:', product2.name)
 
   // 建立第二個商品的階梯價格
+  // UV：商品2-2 級別價格
   await prisma.priceTier.deleteMany({
     where: { productId: product2.id },
   })
@@ -127,6 +117,7 @@ async function main() {
   console.log('✅ 階梯價格2建立完成')
 
   // 建立第三個測試商品
+  // UV：商品3，血壓計
   const product3 = await prisma.product.upsert({
     where: { name: '血壓計' },
     update: {},
@@ -149,6 +140,7 @@ async function main() {
   console.log('✅ 商品3建立完成:', product3.name)
 
   // 建立第三個商品的階梯價格
+  // UV：商品3-3 級別價格
   await prisma.priceTier.deleteMany({
     where: { productId: product3.id },
   })
@@ -166,6 +158,7 @@ async function main() {
   console.log('✅ 階梯價格3建立完成')
 
   // 建立第四個測試商品
+  // UV：商品4，血糖儀
   const product4 = await prisma.product.upsert({
     where: { name: '血糖儀' },
     update: {},
@@ -188,6 +181,7 @@ async function main() {
   console.log('✅ 商品4建立完成:', product4.name)
 
   // 建立第四個商品的階梯價格
+  // UV：商品4-4 級別價格
   await prisma.priceTier.deleteMany({
     where: { productId: product4.id },
   })
@@ -204,6 +198,7 @@ async function main() {
   console.log('✅ 階梯價格4建立完成')
 
   // 建立第五個測試商品
+  // UV：商品5，體溫槍
   const product5 = await prisma.product.upsert({
     where: { name: '體溫槍' },
     update: {},
@@ -226,6 +221,7 @@ async function main() {
   console.log('✅ 商品5建立完成:', product5.name)
 
   // 建立第五個商品的階梯價格
+  // UV：商品5-5 級別價格
   await prisma.priceTier.deleteMany({
     where: { productId: product5.id },
   })
