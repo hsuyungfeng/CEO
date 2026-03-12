@@ -7,8 +7,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import * as Sentry from '@sentry/nextjs';
+import * as SentryModule from '@sentry/nextjs';
 import { captureError, startPerformanceTrace } from '@/lib/sentry-helper';
+
+const Sentry = SentryModule;
 
 export default function SentryTestPage() {
   const [testResults, setTestResults] = useState<Array<{
@@ -218,7 +220,7 @@ SENTRY_ENVIRONMENT: ${process.env.SENTRY_ENVIRONMENT || '未設置'}`}
             <h3 className="font-medium mb-1">Sentry 狀態</h3>
             <pre className="text-sm bg-gray-100 p-2 rounded overflow-x-auto">
               {`客戶端: ${Sentry.getClient() ? '已初始化' : '未初始化'}
-版本: ${Sentry.getSdkVersion?.() || '未知'}
+版本: ${typeof (Sentry as any).getSDKVersion === 'function' ? (Sentry as any).getSDKVersion() : '未知'}
 環境: ${Sentry.getCurrentHub?.()?.getScope?.()?.getTransaction?.()?.tags?.environment || '未知'}`}
             </pre>
           </div>

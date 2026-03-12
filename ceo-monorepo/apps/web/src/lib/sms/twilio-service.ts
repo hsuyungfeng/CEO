@@ -31,12 +31,26 @@ export class TwilioSmsService {
 
   constructor(config: SmsConfig) {
     this.config = config;
-    
+
     if (config.enabled && config.accountSid && config.authToken) {
       try {
-        // 動態導入 Twilio 客戶端
-        const twilio = require('twilio');
-        this.twilioClient = twilio(config.accountSid, config.authToken);
+        // 動態導入 Twilio 客戶端 - 使用延遲加載以支持 Turbopack
+        // eslint-disable-next-line global-require
+        const twilioModule = (() => {
+          try {
+            // 嘗試在運行時導入 twilio
+            return require('twilio');
+          } catch {
+            return null;
+          }
+        })();
+
+        if (twilioModule) {
+          this.twilioClient = twilioModule(config.accountSid, config.authToken);
+        } else {
+          console.warn('Twilio 模組未安裝，SMS 功能將被禁用');
+          this.config.enabled = false;
+        }
       } catch (error) {
         console.warn('Twilio 客戶端初始化失敗，SMS 功能將被禁用:', error);
         this.config.enabled = false;

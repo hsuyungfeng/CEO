@@ -58,8 +58,45 @@ async function main() {
   console.log('✅ 供應商建立完成:', supplier.companyName)
   console.log('📦 供應商詳細資訊：', { taxId: supplier.taxId, companyName: supplier.companyName, contactPerson: supplier.contactPerson, status: supplier.status })
 
-  // 建立第二個商品的階梯價格 (續)
-  console.log('📐 建立商品 2 (酒精乾洗手) 的價格級別')
+  // 建立測試 Firm
+  // UV：公司資訊
+  const firm = await prisma.firm.upsert({
+    where: { name: '健康醫療器材' },
+    update: {},
+    create: {
+      name: '健康醫療器材',
+      phone: '0912345678',
+      address: '台北市信義區健康路123號',
+      isActive: true,
+    },
+  })
+  console.log('✅ Firm 建立完成:', firm.name)
+
+  // 建立第一個測試商品
+  // UV：商品1，醫療口罩
+  const product = await prisma.product.upsert({
+    where: { name: '醫療口罩' },
+    update: {},
+    create: {
+      name: '醫療口罩',
+      subtitle: '三層防護專業醫療口罩',
+      description: '符合國際標準的三層防護醫療口罩，適合醫療機構和個人使用。',
+      image: '/placeholder-product.svg',
+      unit: '盒',
+      spec: '每盒50片',
+      isActive: true,
+      isFeatured: true,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      minGroupQty: 1,
+      totalSold: 0,
+      firmId: firm.id,
+    },
+  })
+  console.log('✅ 商品1建立完成:', product.name)
+
+  // 建立第一個商品的階梯價格
+  // UV：商品1-4 級別價格
   await prisma.priceTier.deleteMany({
     where: { productId: product.id },
   })
@@ -74,7 +111,7 @@ async function main() {
   for (const tier of priceTiers) {
     await prisma.priceTier.create({ data: tier })
   }
-  console.log('✅ 階梯價格建立完成')
+  console.log('✅ 階梯價格1建立完成')
 
   // 建立第二個測試商品
   // UV：商品2，酒精乾洗手
