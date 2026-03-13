@@ -1,14 +1,14 @@
 // POST /api/admin/notifications/broadcast - 發送系統廣播通知
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth-helper'
+import { requireAdmin } from '@/lib/admin-auth'
 import { NotificationService } from '@/lib/notification-service'
 import { NotificationType } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
   try {
-    const authData = await requireAdmin(request)
-    if (!authData) {
-      return NextResponse.json({ error: '未授權或權限不足' }, { status: 403 })
+    const adminCheck = await requireAdmin()
+    if ('error' in adminCheck) {
+      return adminCheck.error
     }
 
     const body = await request.json()

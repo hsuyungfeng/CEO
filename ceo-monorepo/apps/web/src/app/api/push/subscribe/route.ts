@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { auth } from '@/auth'
 import { pushNotificationService } from '@/lib/push-notification-service'
 
 export async function POST(request: NextRequest) {
   try {
-    // 驗證用戶
-    const session = await getServerSession(auth)
+    // 驗證用戶（NextAuth v5 直接使用 auth()）
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: '未授權' },

@@ -9,15 +9,18 @@ import Link from 'next/link'
 import OrderStatusUpdate from '@/components/admin/order-status-update'
 
 interface OrderDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
+  // 在 Next.js 15+ 中，params 是一個 Promise，需要 await
+  const { id } = await params
+  
   const order = await prisma.order.findUnique({
     where: {
-      id: params.id,
+      id: id,
     },
     include: {
       user: {

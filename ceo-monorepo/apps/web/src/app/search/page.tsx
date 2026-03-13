@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,19 @@ interface SearchResult {
 }
 
 export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p className="mt-4 text-gray-600">載入中...</p>
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
+  );
+}
+
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [searchQuery, setSearchQuery] = useState(query);

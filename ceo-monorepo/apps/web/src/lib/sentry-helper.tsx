@@ -109,17 +109,20 @@ export function captureBusinessError(
  * @returns 跟踪事務
  */
 export function startPerformanceTrace(name: string, operation: string) {
-  const transaction = Sentry.startTransaction({
-    name,
-    op: operation,
-  });
-  
-  // 在開發環境中記錄
-  if (process.env.NODE_ENV === 'development') {
-    console.log('📊 Sentry 性能跟踪開始:', { name, operation });
-  }
-  
-  return transaction;
+  // Sentry v8 使用 startSpan 替代已棄用的 startTransaction
+  return Sentry.startSpan(
+    {
+      name,
+      op: operation,
+    },
+    (span) => {
+      // 在開發環境中記錄
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 Sentry 性能跟踪開始:', { name, operation });
+      }
+      return span;
+    }
+  );
 }
 
 /**
@@ -260,7 +263,8 @@ export function withSentryErrorBoundary<T extends React.ComponentType<any>>(
  * @returns 是否已初始化
  */
 export function isSentryInitialized(): boolean {
-  return !!Sentry.getCurrentHub().getClient();
+  // Sentry v8 使用 getClient() 替代已棄用的 getCurrentHub()
+  return !!Sentry.getClient();
 }
 
 /**
@@ -269,8 +273,9 @@ export function isSentryInitialized(): boolean {
  * @returns 跟踪 ID
  */
 export function getTraceId(): string | undefined {
-  const scope = Sentry.getCurrentHub().getScope();
-  return scope?.getSpan()?.spanId;
+  // Sentry v8 使用 getActiveSpan() 替代已棄用的 getCurrentHub()
+  const span = Sentry.getActiveSpan();
+  return span ? Sentry.spanToJSON(span).span_id : undefined;
 }
 
 export default {

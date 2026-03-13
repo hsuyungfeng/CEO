@@ -3,15 +3,18 @@ import { prisma } from '@/lib/prisma'
 import EditProductForm from '@/components/admin/edit-product-form'
 
 interface EditProductPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
+  // 在 Next.js 15+ 中，params 是一個 Promise，需要 await
+  const { id } = await params
+  
   const product = await prisma.product.findUnique({
     where: {
-      id: params.id,
+      id: id,
     },
     include: {
       category: true,
