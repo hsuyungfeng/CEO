@@ -158,7 +158,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
               id: true
             }
           },
-          supplierApplications: {
+          applications: {
             select: {
               id: true
             }
@@ -188,7 +188,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
       createdAt: supplier.createdAt,
       updatedAt: supplier.updatedAt,
       productsCount: supplier.products.length,
-      applicationsCount: supplier.supplierApplications.length,
+      applicationsCount: supplier.applications.length,
     }));
 
     // 計算分頁資訊
