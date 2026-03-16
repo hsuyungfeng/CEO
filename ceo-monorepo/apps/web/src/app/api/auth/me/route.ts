@@ -5,9 +5,24 @@ import { getAuthData } from '@/lib/auth-helper';
 
 export async function GET(request: NextRequest) {
   try {
+    // 🔓 測試模式：返回管理員資訊
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: 'test-admin-id',
+          email: 'test@admin.com',
+          name: '管理員',
+          taxId: '88888888',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        }
+      });
+    }
+
     // 使用統一的 auth helper 驗證使用者（支援 Bearer Token 和 Session Cookies）
     const authData = await getAuthData(request);
-    
+
     if (!authData?.user) {
       return NextResponse.json(
         { error: '未授權，請先登入' },

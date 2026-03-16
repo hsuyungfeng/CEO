@@ -26,21 +26,23 @@ export default function AdminLayout({
         // 檢查當前 session
         const response = await fetch('/api/auth/me')
         const data = await response.json()
-        
+
         if (response.ok && data.user) {
           const currentUser = data.user
           const isAdmin = currentUser.role === 'ADMIN' || currentUser.role === 'SUPER_ADMIN'
-          
+
           if (!isAdmin) {
             router.push('/')
             return
           }
-          
+
           setUser(currentUser)
-        } else {
-          // 未登入，重定向到登入頁面
-          router.push('/login?redirect=/admin')
+          setLoading(false)
+          return
         }
+
+        // 未登入，重定向到登入頁面
+        router.push('/login?redirect=/admin')
       } catch (error) {
         console.error('檢查認證錯誤:', error)
         router.push('/login?redirect=/admin')
