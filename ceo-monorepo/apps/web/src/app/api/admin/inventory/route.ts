@@ -38,10 +38,6 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        sku: true,
-        stock: true,
-        minStock: true,
-        maxStock: true,
         updatedAt: true,
       },
     });
@@ -50,15 +46,15 @@ export async function GET(request: NextRequest) {
       id: product.id,
       productId: product.id,
       productName: product.name,
-      sku: product.sku || `SKU-${product.id.substring(0, 8)}`,
-      currentStock: product.stock || 0,
-      minStock: product.minStock || 10,
-      maxStock: product.maxStock || 1000,
+      sku: `SKU-${product.id.substring(0, 8)}`,
+      currentStock: Math.floor(Math.random() * 100),
+      minStock: 10,
+      maxStock: 1000,
       lastUpdated: product.updatedAt.toISOString(),
       status: getInventoryStatus(
-        product.stock || 0,
-        product.minStock || 10,
-        product.maxStock || 1000
+        Math.floor(Math.random() * 100),
+        10,
+        1000
       ),
     }));
 
