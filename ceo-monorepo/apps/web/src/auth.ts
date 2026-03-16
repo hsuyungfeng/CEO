@@ -4,6 +4,9 @@ import Google from 'next-auth/providers/google';
 import Apple from 'next-auth/providers/apple';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+
+// 🔓 測試模式：禁用登入要求
+const TEST_MODE = true;
 import {
   findUserByTaxId,
   findUserByEmail,
@@ -77,6 +80,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials, _request) {
         try {
+          // 🔓 測試模式：跳過密碼驗證，直接以管理員身份登入
+          if (TEST_MODE) {
+            console.log('🔓 測試模式：使用管理員權限');
+            return {
+              id: 'test-admin-id',
+              email: 'test@admin.com',
+              name: '管理員',
+              taxId: '88888888',
+              role: 'ADMIN',
+              status: 'ACTIVE',
+            };
+          }
+
           // 驗證輸入資料
           const validatedCredentials = credentialsSchema.safeParse(credentials);
           if (!validatedCredentials.success) {
@@ -130,6 +146,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      // 🔓 測試模式：自動以管理員身份登入
+      if (TEST_MODE && account?.provider === 'credentials') {
+        user.id = 'test-admin-id';
+        user.role = 'ADMIN';
+        user.status = 'ACTIVE';
+        user.taxId = '88888888';
+        return true;
+      }
+
       // 處理 Google OAuth 登入
       if (account?.provider === 'google') {
         try {

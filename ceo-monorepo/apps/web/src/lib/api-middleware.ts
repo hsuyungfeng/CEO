@@ -221,6 +221,23 @@ export function withAuth(options: AuthOptions = {}) {
       context: { params?: Record<string, string> } = {}
     ): Promise<NextResponse> {
       try {
+        // 🔓 測試模式：使用假的管理員認證數據
+        const TEST_MODE = process.env.NODE_ENV === 'development' && true;
+        if (TEST_MODE && !await getAuthData(request)) {
+          const fakeAuthData = {
+            user: {
+              id: 'test-admin-id',
+              email: 'test@admin.com',
+              name: '管理員',
+              taxId: '88888888',
+              role: 'ADMIN',
+              status: 'ACTIVE',
+            },
+            provider: 'test',
+          };
+          return await handler(request, { ...context, authData: fakeAuthData as any });
+        }
+
         // 獲取認證數據
         const authData = await getAuthData(request);
 
