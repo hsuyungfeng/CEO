@@ -12,6 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PriceTierForm, { PriceTier as PriceTierType } from '@/components/admin/price-tier-form'
 import GroupBuyingTimeForm from '@/components/admin/group-buying-time-form'
 import { toast } from 'sonner'
+import { Upload, X, Image as ImageIcon } from 'lucide-react'
+
+interface ImagePreview {
+  file: File
+  preview: string
+}
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -23,6 +29,7 @@ export default function NewProductPage() {
   const [startTime, setStartTime] = useState('')
   const [endDate, setEndDate] = useState('')
   const [endTime, setEndTime] = useState('')
+  const [images, setImages] = useState<ImagePreview[]>([])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -80,6 +87,34 @@ export default function NewProductPage() {
     setPriceTiers(newTiers)
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.currentTarget.files
+    if (!files) return
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} 不是圖片文件`)
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} 大小超過 5MB`)
+        return
+      }
+
+      const preview = URL.createObjectURL(file)
+      setImages(prev => [...prev, { file, preview }])
+    })
+  }
+
+  const handleRemoveImage = (index: number) => {
+    setImages(prev => {
+      const newImages = [...prev]
+      URL.revokeObjectURL(newImages[index].preview)
+      newImages.splice(index, 1)
+      return newImages
+    })
+  }
+
   return (
     <div>
       <div className="mb-8">
@@ -126,6 +161,56 @@ export default function NewProductPage() {
               tiers={priceTiers}
               onChange={handlePriceTiersChange}
             />
+
+            {/* 商品圖片 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>商品圖片</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition">
+                  <input
+                    id="images"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <label htmlFor="images" className="cursor-pointer">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">點擊或拖拽圖片到此</p>
+                    <p className="text-xs text-gray-400 mt-1">支持 JPG、PNG、WebP（最大 5MB）</p>
+                  </label>
+                </div>
+
+                {/* 圖片預覽 */}
+                {images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4">
+                    {images.map((img, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={img.preview}
+                          alt="preview"
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {images.length > 0 && (
+                  <p className="text-sm text-gray-600">已選擇 {images.length} 張圖片</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
