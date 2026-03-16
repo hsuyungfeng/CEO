@@ -2,6 +2,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NotificationType } from '@prisma/client'
@@ -60,16 +62,30 @@ const testNotifications = [
 ]
 
 export default function TestNotificationsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   const sendTestNotification = async (notification: any) => {
     try {
       setLoading(true)
+      setError(null)
       
-      // 獲取當前用戶ID（這裡需要實際的用戶認證）
-      // 暫時使用測試用戶ID
-      const userId = 'test-user-123'
+      if (status === 'loading') {
+        setError('正在載入用戶資訊，請稍候...')
+        return
+      }
+      
+      if (status === 'unauthenticated' || !session?.user?.id) {
+        setError('請先登入以測試通知功能')
+        router.push('/auth/login')
+        return
+      }
+      
+      // 使用當前登入用戶的ID
+      const userId = session.user.id
       
       const response = await fetch('/api/notifications/test', {
         method: 'POST',
@@ -151,9 +167,16 @@ export default function TestNotificationsPage() {
               >
                 清除結果
               </Button>
-            </div>
+             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+             {error && (
+               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                 <div className="text-red-800 font-medium">錯誤</div>
+                 <div className="text-red-600 text-sm mt-1">{error}</div>
+               </div>
+             )}
+            
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {testNotifications.map((notification, index) => (
                 <Card key={index} className="bg-muted/50">
                   <CardContent className="pt-6">

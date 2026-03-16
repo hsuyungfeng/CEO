@@ -59,7 +59,7 @@ export default function LoginPage() {
       }
 
       // 登入成功，重新導向到首頁
-      router.push('/(shop)');
+      router.push('/');
       router.refresh(); // 刷新頁面以更新認證狀態
 
     } catch (err) {

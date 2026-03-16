@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { Server } from 'http'
 import { verify } from 'jsonwebtoken'
-import { prisma } from './prisma'
+import { prisma } from '@/lib/prisma'
 
 interface WebSocketClient {
   ws: WebSocket

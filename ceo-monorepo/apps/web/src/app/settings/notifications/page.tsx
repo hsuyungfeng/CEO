@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { NotificationType, NotificationChannel } from '@prisma/client'
+import { getCsrfToken } from 'next-auth/react'
 
 interface NotificationPreference {
   id: string
@@ -127,6 +128,10 @@ export default function NotificationSettingsPage() {
     
     try {
       setSaving(true)
+      
+      // 獲取 CSRF 令牌
+      const csrfToken = await getCsrfToken()
+      
       const response = await fetch('/api/notification-preferences', {
         method: 'PATCH',
         headers: {
@@ -135,6 +140,7 @@ export default function NotificationSettingsPage() {
         body: JSON.stringify({
           ...preferences,
           preferredChannels: selectedChannels,
+          csrfToken,
         }),
       })
       

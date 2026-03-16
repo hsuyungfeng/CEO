@@ -34,7 +34,7 @@ export default function SuppliersPage() {
 
   async function fetchSuppliers() {
     try {
-      const res = await fetch('/api/suppliers?status=ACTIVE')
+      const res = await fetch('/api/suppliers?status=ACTIVE&page=1&limit=20&search=')
       const data = await res.json()
       if (data.success) {
         setSuppliers(data.data)

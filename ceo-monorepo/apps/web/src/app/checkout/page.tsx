@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,18 +10,44 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreditCard, MapPin, User, Phone, Mail } from 'lucide-react';
 
-// Mock data for cart items
-const mockCartItems = [
-  { id: 1, name: '醫療口罩', price: 150, quantity: 3, image: '/placeholder-product.svg', unit: '盒' },
-  { id: 2, name: '血壓計', price: 2450, quantity: 1, image: '/placeholder-product.svg', unit: '台' },
-];
+interface CartItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  savings: number;
+  product: {
+    id: string;
+    name: string;
+    subtitle: string | null;
+    image: string | null;
+    unit: string;
+    spec: string | null;
+    priceTiers: Array<{ minQty: number; price: number }>;
+    firm: string | null;
+  };
+}
+
+interface CartResponse {
+  items: CartItem[];
+  summary: {
+    totalItems: number;
+    totalAmount: number;
+    totalSavings: number;
+    finalAmount: number;
+  };
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [orderNote, setOrderNote] = useState('');
   const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [cartData, setCartData] = useState<CartResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
-  // Mock user data
+  // Mock user data (temporary)
   const userData = {
     name: '王大明',
     taxId: '12345678',
@@ -31,16 +57,105 @@ export default function CheckoutPage() {
     shippingAddress: '台北市中山區南京東路一段123號',
   };
 
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  async function fetchCart() {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/cart');
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      const data = await res.json();
+      setCartData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '載入購物車失敗');
+      console.error('購物車載入錯誤:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Calculate totals
-  const subtotal = mockCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = cartData?.summary.totalAmount || 0;
   const shipping = subtotal > 0 ? 150 : 0; // Fixed shipping cost
   const total = subtotal + shipping;
 
-  const handlePlaceOrder = () => {
-    // Process order
-    alert('訂單已送出！訂單編號：' + new Date().getTime());
-    router.push('/orders');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePlaceOrder = async () => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Process order
+      const orderId = new Date().getTime();
+      // 這裡應該呼叫訂單 API
+      // await fetch('/api/orders', { method: 'POST', body: JSON.stringify({...}) });
+      
+      console.log(`訂單已送出！訂單編號：${orderId}`);
+      router.push('/orders');
+    } catch (error) {
+      console.error('訂單提交失敗:', error);
+      alert('訂單提交失敗，請稍後再試');
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold mb-8">結帳</h1>
+          <div className="text-center py-12">
+            <p className="text-gray-500">載入中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold mb-8">結帳</h1>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            <strong className="font-bold">錯誤：</strong> {error}
+          </div>
+          <Button onClick={fetchCart} className="mt-4">
+            重新載入
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const items = cartData?.items || [];
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold mb-8">結帳</h1>
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">您的購物車是空的</p>
+            <Button 
+              className="mt-4"
+              onClick={() => router.push('/cart')}
+            >
+              返回購物車
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -56,22 +171,25 @@ export default function CheckoutPage() {
               </CardHeader>
               
               <CardContent className="space-y-4">
-                {mockCartItems.map((item) => (
+                {items.map((item) => (
                   <div key={item.id} className="flex items-center">
                     <div className="w-16 h-16 bg-gray-200 mr-4">
                       <img 
-                        src={item.image} 
-                        alt={item.name} 
+                        src={item.product.image || '/placeholder-product.svg'} 
+                        alt={item.product.name} 
                         className="w-full h-full object-contain"
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-gray-600">數量: {item.quantity} {item.unit}</p>
+                      <h3 className="font-medium">{item.product.name}</h3>
+                      <p className="text-sm text-gray-600">數量: {item.quantity} {item.product.unit}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${item.price * item.quantity}</p>
-                      <p className="text-sm text-gray-600">${item.price}/{item.unit}</p>
+                      <p className="font-medium">${item.subtotal}</p>
+                      <p className="text-sm text-gray-600">${item.unitPrice}/{item.product.unit}</p>
+                      {item.savings > 0 && (
+                        <p className="text-sm text-green-600">節省: ${item.savings}</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -205,12 +323,13 @@ export default function CheckoutPage() {
               </CardContent>
               
               <CardFooter className="flex flex-col space-y-4">
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700" 
-                  onClick={handlePlaceOrder}
-                >
-                  確認下單 - ${total}
-                </Button>
+                 <Button 
+                   className="w-full bg-blue-600 hover:bg-blue-700" 
+                   onClick={handlePlaceOrder}
+                   disabled={isSubmitting}
+                 >
+                   {isSubmitting ? '處理中...' : `確認下單 - $${total}`}
+                 </Button>
                 <Button 
                   variant="outline" 
                   className="w-full" 

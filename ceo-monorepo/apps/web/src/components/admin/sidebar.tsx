@@ -359,12 +359,25 @@ export default function AdminSidebar() {
 
         {/* 底部區域 */}
         <div className="flex flex-shrink-0 border-t border-gray-200 dark:border-gray-800 p-4">
-          {collapsed ? (
+           {collapsed ? (
             <Button
               variant="ghost"
               size="icon"
               className="w-full"
-              onClick={() => window.location.href = '/api/auth/logout'}
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                  });
+                  if (response.ok) {
+                    window.location.href = '/';
+                  } else {
+                    console.error('登出失敗:', response.status);
+                  }
+                } catch (error) {
+                  console.error('登出錯誤:', error);
+                }
+              }}
               aria-label="登出"
             >
               <LogOut className="h-5 w-5" />
@@ -389,7 +402,20 @@ export default function AdminSidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => window.location.href = '/api/auth/logout'}
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/auth/logout', {
+                      method: 'POST',
+                    });
+                    if (response.ok) {
+                      window.location.href = '/';
+                    } else {
+                      console.error('登出失敗:', response.status);
+                    }
+                  } catch (error) {
+                    console.error('登出錯誤:', error);
+                  }
+                }}
                 aria-label="登出"
               >
                 <LogOut className="h-5 w-5" />

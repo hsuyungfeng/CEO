@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Menu, X, Bell, Search, Moon, Sun, Monitor } from 'lucide-react';
+import { ShoppingCart, Menu, X, Bell, Search, Moon, Sun, Monitor, User, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUnreadCount } from '@/contexts/websocket-context';
 import { Input } from '@/components/ui/input';
 import { useTheme, ThemeToggle } from '@/contexts/theme-context';
+import { useSession, signOut as authSignOut } from 'next-auth/react';
 
 export function Header() {
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const unreadCount = useUnreadCount();
   const { theme, resolvedTheme } = useTheme();
+  const { data: session, status } = useSession();
 
   // Mock cart count
   const cartItemCount = 3;
@@ -222,9 +224,43 @@ export function Header() {
               </Button>
             </Link>
             
-            <Button asChild className="hidden md:block">
-              <Link href="/login" aria-label="會員登入">會員登入</Link>
-            </Button>
+            {status === 'loading' ? (
+              <Button variant="ghost" className="hidden md:block" disabled>
+                載入中...
+              </Button>
+            ) : session ? (
+              <div className="hidden md:flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                    <User className="h-4 w-4 text-blue-800 dark:text-blue-300" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {session.user?.name || '會員'}
+                  </span>
+                </div>
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   className="hidden md:block"
+                   onClick={async () => {
+                     try {
+                       await authSignOut({ redirect: false });
+                       router.push('/');
+                       router.refresh();
+                     } catch (error) {
+                       console.error('登出錯誤:', error);
+                     }
+                   }}
+                   aria-label="登出"
+                 >
+                   登出
+                 </Button>
+              </div>
+            ) : (
+              <Button asChild className="hidden md:block">
+                <Link href="/login" aria-label="會員登入">會員登入</Link>
+              </Button>
+            )}
             
             {/* Mobile menu button */}
             <Button 
@@ -398,9 +434,40 @@ export function Header() {
                   </span>
                 )}
               </Link>
-              <Button asChild className="w-full mt-2">
-                <Link href="/login" aria-label="會員登入">會員登入</Link>
-              </Button>
+               {status === 'loading' ? (
+                 <Button className="w-full mt-2" disabled>
+                   載入中...
+                 </Button>
+               ) : session ? (
+                 <div className="w-full mt-2 space-y-2">
+                   <div className="flex items-center justify-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                     <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2">
+                       <User className="h-4 w-4 text-blue-800 dark:text-blue-300" />
+                     </div>
+                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                       {session.user?.name || '會員'}
+                     </span>
+                   </div>
+                    <Button
+                      className="w-full"
+                      onClick={async () => {
+                        try {
+                          await authSignOut({ redirect: false });
+                          window.location.href = '/';
+                        } catch (error) {
+                          console.error('登出錯誤:', error);
+                        }
+                      }}
+                      aria-label="登出"
+                    >
+                      登出
+                    </Button>
+                 </div>
+               ) : (
+                 <Button asChild className="w-full mt-2">
+                   <Link href="/login" aria-label="會員登入">會員登入</Link>
+                 </Button>
+               )}
             </nav>
           </div>
         )}

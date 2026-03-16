@@ -128,7 +128,35 @@ export function useTheme() {
 export function ThemeToggle() {
   const { theme, resolvedTheme, toggleTheme } = useTheme();
   
-  const getThemeIcon = () => {
+   const getThemeIcon = () => {
+    // 伺服器端渲染時，總是返回淺色模式圖標以避免 hydration 錯誤
+    if (typeof window === 'undefined') {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" />
+          <line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </svg>
+      );
+    }
+    
     if (theme === 'system') {
       return (
         <svg
@@ -173,7 +201,7 @@ export function ThemeToggle() {
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="20"
-        height="20"
+          height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -195,7 +223,12 @@ export function ThemeToggle() {
     );
   };
 
-  const getThemeLabel = () => {
+   const getThemeLabel = () => {
+    // 伺服器端渲染時，總是返回「淺色模式」以避免 hydration 錯誤
+    if (typeof window === 'undefined') {
+      return '淺色模式';
+    }
+    
     if (theme === 'system') {
       return '系統主題';
     }
@@ -211,6 +244,7 @@ export function ThemeToggle() {
       className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
       aria-label={`切換主題，當前為${getThemeLabel()}`}
       title={`切換主題（當前：${getThemeLabel()}）`}
+      suppressHydrationWarning
     >
       {getThemeIcon()}
       <span className="sr-only">切換主題</span>
