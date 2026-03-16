@@ -125,43 +125,6 @@ export default function NewProductPage() {
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            {/* 基本資訊 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>基本資訊</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="name">商品名稱 *</Label>
-                  <Input id="name" name="name" required />
-                </div>
-                <div>
-                  <Label htmlFor="subtitle">副標題</Label>
-                  <Input id="subtitle" name="subtitle" />
-                </div>
-                <div>
-                  <Label htmlFor="description">商品描述</Label>
-                  <Textarea id="description" name="description" rows={4} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="unit">單位</Label>
-                    <Input id="unit" name="unit" placeholder="盒、瓶、包等" />
-                  </div>
-                  <div>
-                    <Label htmlFor="spec">規格</Label>
-                    <Input id="spec" name="spec" placeholder="例如：100ml/瓶" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 階梯定價 */}
-            <PriceTierForm
-              tiers={priceTiers}
-              onChange={handlePriceTiersChange}
-            />
-
             {/* 商品圖片 */}
             <Card>
               <CardHeader>
@@ -211,6 +174,43 @@ export default function NewProductPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* 基本資訊 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>基本資訊</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="name">商品名稱 *</Label>
+                  <Input id="name" name="name" required />
+                </div>
+                <div>
+                  <Label htmlFor="subtitle">副標題</Label>
+                  <Input id="subtitle" name="subtitle" />
+                </div>
+                <div>
+                  <Label htmlFor="description">商品描述</Label>
+                  <Textarea id="description" name="description" rows={4} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="unit">單位</Label>
+                    <Input id="unit" name="unit" placeholder="盒、瓶、包等" />
+                  </div>
+                  <div>
+                    <Label htmlFor="spec">規格</Label>
+                    <Input id="spec" name="spec" placeholder="例如：100ml/瓶" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 階梯定價 */}
+            <PriceTierForm
+              tiers={priceTiers}
+              onChange={handlePriceTiersChange}
+            />
           </div>
 
           <div className="space-y-6">
