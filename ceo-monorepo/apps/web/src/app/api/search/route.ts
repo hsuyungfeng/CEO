@@ -19,9 +19,9 @@ import { SYSTEM_ERRORS } from '@/lib/constants';
 // 搜尋查詢驗證 Schema
 const SearchQuerySchema = z.object({
   q: z.string().min(1, '搜尋查詞不能為空').max(100, '搜尋查詞過長'),
-  type: z.enum(['all', 'products', 'suppliers', 'categories']).optional().default('all'),
-  limit: z.coerce.number().int().min(1).max(50).optional().default(10),
-  page: z.coerce.number().int().min(1).optional().default(1),
+  type: z.string().nullable().optional(),
+  limit: z.string().nullable().optional(),
+  page: z.string().nullable().optional(),
 });
 
 // GET /api/search - 全域搜尋
@@ -38,15 +38,23 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     });
 
     if (!validation.success) {
+      const errorMessages = validation.error.errors
+        ?.map(e => `${e.path.join('.')}: ${e.message}`)
+        .join('; ') || validation.error.message;
       return createErrorResponse(
         ErrorCode.VALIDATION_ERROR,
         '搜尋參數驗證失敗',
-        validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; '),
+        errorMessages,
         400
       );
     }
 
-    const { q, type, limit, page } = validation.data;
+    const { q, type: typeParam, limit: limitParam, page: pageParam } = validation.data;
+
+    // 設定預設值並進行類型轉換
+    const type = (typeParam as any) || 'all';
+    const limit = Math.min(Math.max(parseInt(limitParam || '10'), 1), 50);
+    const page = Math.max(parseInt(pageParam || '1'), 1);
     const skip = (page - 1) * limit;
 
     let results: any = {
@@ -60,6 +68,16 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
         totalPages: 0,
       }
     };
+
+    // 驗證 type 值
+    if (!['all', 'products', 'suppliers', 'categories'].includes(type)) {
+      return createErrorResponse(
+        ErrorCode.VALIDATION_ERROR,
+        '搜尋類型無效',
+        `允許的類型: all, products, suppliers, categories`,
+        400
+      );
+    }
 
     // 搜尋產品
     if (type === 'all' || type === 'products') {
@@ -77,7 +95,6 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
           subtitle: true,
           description: true,
           image: true,
-          price: true,
           unit: true,
         },
         take: limit,
@@ -152,16 +169,11 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     if (type === 'all' || type === 'categories') {
       const categories = await prisma.category.findMany({
         where: {
-          OR: [
-            { name: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
-          ]
+          name: { contains: q, mode: 'insensitive' }
         },
         select: {
           id: true,
           name: true,
-          description: true,
-          image: true,
         },
         take: type === 'all' ? 3 : limit,
         skip: type === 'all' ? 0 : skip,
@@ -169,10 +181,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
 
       const categoryCount = await prisma.category.count({
         where: {
-          OR: [
-            { name: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
-          ]
+          name: { contains: q, mode: 'insensitive' }
         }
       });
 
