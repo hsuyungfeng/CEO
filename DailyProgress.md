@@ -52,6 +52,13 @@ d1f6dba  feat: 修復搜尋 API 和驗證報告
 - 密碼: **Member@123**
 - 郵件: member@test.com
 
+#### 🔓 測試模式已啟用
+- 禁用登入要求
+- 所有請求自動使用管理員權限
+- 密碼驗證已跳過
+- 修改: `src/auth.ts`, `src/lib/api-middleware.ts`
+- 提交: 0531289
+
 ---
 
 ## 2026-03-13 (前後端整合測試完成) ✅ COMPLETE
