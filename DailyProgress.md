@@ -47,6 +47,11 @@ d1f6dba  feat: 修復搜尋 API 和驗證報告
 - 郵件: ceo.admin@test.com
 - 訪問: http://localhost:3000/admin
 
+**一般會員帳號**:
+- 統一編號: **55555555**
+- 密碼: **Member@123**
+- 郵件: member@test.com
+
 ---
 
 ## 2026-03-13 (前後端整合測試完成) ✅ COMPLETE
