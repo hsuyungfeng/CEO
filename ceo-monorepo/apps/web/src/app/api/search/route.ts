@@ -1,261 +1,202 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
 /**
- * 全域搜尋 API 端點
- * 支援搜尋商品、供應商、採購模板等內容
+ * 搜尋 API 端點
+ *
+ * 路徑: /api/search
+ * 描述: 全域搜尋產品、供應商等資源
  */
-export async function GET(request: NextRequest) {
+
+import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import {
+  withOptionalAuth,
+  createSuccessResponse,
+  createErrorResponse,
+  ErrorCode
+} from '@/lib/api-middleware';
+import { z } from 'zod';
+import { SYSTEM_ERRORS } from '@/lib/constants';
+
+// 搜尋查詢驗證 Schema
+const SearchQuerySchema = z.object({
+  q: z.string().min(1, '搜尋查詞不能為空').max(100, '搜尋查詞過長'),
+  type: z.enum(['all', 'products', 'suppliers', 'categories']).optional().default('all'),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(10),
+  page: z.coerce.number().int().min(1).optional().default(1),
+});
+
+// GET /api/search - 全域搜尋
+export const GET = withOptionalAuth(async (request: NextRequest, { authData }) => {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get('q') || '';
-    const type = searchParams.get('type') || 'all';
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
 
-    if (!query.trim()) {
-      return NextResponse.json(
-        { error: '請提供搜尋關鍵字' },
-        { status: 400 }
+    // 驗證查詢參數
+    const validation = SearchQuerySchema.safeParse({
+      q: searchParams.get('q'),
+      type: searchParams.get('type'),
+      limit: searchParams.get('limit'),
+      page: searchParams.get('page'),
+    });
+
+    if (!validation.success) {
+      return createErrorResponse(
+        ErrorCode.VALIDATION_ERROR,
+        '搜尋參數驗證失敗',
+        validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; '),
+        400
       );
     }
 
-    // 根據搜尋類型執行不同的搜尋
-    const results = await performSearch(query, type, limit, offset);
+    const { q, type, limit, page } = validation.data;
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({
-      query,
-      type,
-      total: results.length,
-      results,
+    let results: any = {
+      query: q,
+      type: type,
+      results: [],
       pagination: {
+        page,
         limit,
-        offset,
-        hasMore: results.length === limit
+        total: 0,
+        totalPages: 0,
       }
-    });
-  } catch (error) {
-    console.error('搜尋 API 錯誤:', error);
-    return NextResponse.json(
-      { error: '搜尋過程中發生錯誤' },
-      { status: 500 }
-    );
-  }
-}
+    };
 
-/**
- * 執行搜尋邏輯
- */
-async function performSearch(
-  query: string,
-  type: string,
-  limit: number,
-  offset: number
-) {
-  const searchTerm = query.toLowerCase().trim();
-  const results: any[] = [];
-
-    // 搜尋商品
-    if (type === 'all' || type === 'product') {
+    // 搜尋產品
+    if (type === 'all' || type === 'products') {
       const products = await prisma.product.findMany({
         where: {
           OR: [
-            { name: { contains: searchTerm, mode: 'insensitive' } },
-            { description: { contains: searchTerm, mode: 'insensitive' } }
-          ],
-          isActive: true,
-          isDeleted: false
+            { name: { contains: q, mode: 'insensitive' } },
+            { subtitle: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ]
         },
-        take: Math.floor(limit / 3),
-        skip: offset,
         select: {
           id: true,
           name: true,
+          subtitle: true,
           description: true,
-          categoryId: true,
+          image: true,
           price: true,
           unit: true,
-          images: true,
-          supplier: {
-            select: {
-              id: true,
-              companyName: true
-            }
-          }
         },
-        orderBy: {
-          createdAt: 'desc'
+        take: limit,
+        skip: skip,
+      });
+
+      const productCount = await prisma.product.count({
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { subtitle: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ]
         }
       });
 
-      results.push(...products.map(product => ({
-        id: product.id,
-        type: 'product',
-        title: product.name,
-        description: product.description || '',
-        category: '商品',
-        relevance: calculateRelevance(product.name, product.description, searchTerm),
-        url: `/products/${product.id}`,
-        metadata: {
-          price: `NT$ ${product.price}`,
-          unit: product.unit,
-          supplier: product.supplier?.companyName || '未知供應商'
-        }
-      })));
+      results.results.push({
+        type: 'products',
+        count: productCount,
+        data: products,
+      });
+
+      if (type === 'products') {
+        results.pagination.total = productCount;
+        results.pagination.totalPages = Math.ceil(productCount / limit);
+      }
     }
 
     // 搜尋供應商
-    if (type === 'all' || type === 'supplier') {
+    if (type === 'all' || type === 'suppliers') {
       const suppliers = await prisma.supplier.findMany({
         where: {
           OR: [
-            { companyName: { contains: searchTerm, mode: 'insensitive' } },
-            { description: { contains: searchTerm, mode: 'insensitive' } }
-          ],
-          isActive: true,
-          isDeleted: false
+            { companyName: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ]
         },
-        take: Math.floor(limit / 3),
-        skip: offset,
         select: {
           id: true,
+          taxId: true,
           companyName: true,
-          description: true,
-          status: true
+          contactPerson: true,
+          email: true,
+          phone: true,
         },
-        orderBy: {
-          createdAt: 'desc'
+        take: type === 'all' ? 3 : limit,
+        skip: type === 'all' ? 0 : skip,
+      });
+
+      const supplierCount = await prisma.supplier.count({
+        where: {
+          OR: [
+            { companyName: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ]
         }
       });
 
-      results.push(...suppliers.map(supplier => ({
-        id: supplier.id,
-        type: 'supplier',
-        title: supplier.companyName,
-        description: supplier.description || '',
-        category: '供應商',
-        relevance: calculateRelevance(supplier.companyName, supplier.description, searchTerm),
-        url: `/suppliers/${supplier.id}`,
-        metadata: {
-          status: supplier.status
-        }
-      })));
+      results.results.push({
+        type: 'suppliers',
+        count: supplierCount,
+        data: suppliers,
+      });
+
+      if (type === 'suppliers') {
+        results.pagination.total = supplierCount;
+        results.pagination.totalPages = Math.ceil(supplierCount / limit);
+      }
     }
 
-    // 搜尋採購模板
-    if (type === 'all' || type === 'template') {
-      const templates = await prisma.purchaseTemplate.findMany({
+    // 搜尋分類
+    if (type === 'all' || type === 'categories') {
+      const categories = await prisma.category.findMany({
         where: {
           OR: [
-            { name: { contains: searchTerm, mode: 'insensitive' } },
-            { description: { contains: searchTerm, mode: 'insensitive' } }
-          ],
-          isPublic: true
+            { name: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ]
         },
-        take: Math.floor(limit / 3),
-        skip: offset,
         select: {
           id: true,
           name: true,
           description: true,
-          usageCount: true,
-          createdAt: true,
-          user: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
+          image: true,
         },
-        orderBy: {
-          usageCount: 'desc'
+        take: type === 'all' ? 3 : limit,
+        skip: type === 'all' ? 0 : skip,
+      });
+
+      const categoryCount = await prisma.category.count({
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ]
         }
       });
 
-      results.push(...templates.map(template => ({
-        id: template.id,
-        type: 'template',
-        title: template.name,
-        description: template.description || '',
-        category: '採購模板',
-        relevance: calculateRelevance(template.name, template.description, searchTerm),
-        url: `/purchase-templates/${template.id}`,
-        metadata: {
-          usageCount: template.usageCount,
-          createdBy: template.user?.name || '未知用戶',
-          createdAt: new Date(template.createdAt).toLocaleDateString('zh-TW')
-        }
-      })));
+      results.results.push({
+        type: 'categories',
+        count: categoryCount,
+        data: categories,
+      });
+
+      if (type === 'categories') {
+        results.pagination.total = categoryCount;
+        results.pagination.totalPages = Math.ceil(categoryCount / limit);
+      }
     }
 
-  // 按相關度排序
-  return results.sort((a, b) => b.relevance - a.relevance).slice(0, limit);
-}
+    return createSuccessResponse(results);
 
-/**
- * 計算搜尋相關度分數
- */
-function calculateRelevance(title: string, description: string, searchTerm: string): number {
-  let score = 0;
-  
-  // 標題匹配權重最高
-  if (title.toLowerCase().includes(searchTerm)) {
-    score += 70;
-  }
-  
-  // 描述匹配權重中等
-  if (description.toLowerCase().includes(searchTerm)) {
-    score += 30;
-  }
-  
-  // 部分匹配
-  const searchWords = searchTerm.split(' ');
-  searchWords.forEach(word => {
-    if (title.toLowerCase().includes(word)) {
-      score += 20;
-    }
-    if (description.toLowerCase().includes(word)) {
-      score += 10;
-    }
-  });
-  
-  // 確保分數在 0-100 之間
-  return Math.min(100, Math.max(0, score));
-}
-
-/**
- * 儲存搜尋歷史（用於推薦）
- */
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { query, userId, userType } = body;
-
-    if (!query) {
-      return NextResponse.json(
-        { error: '請提供搜尋關鍵字' },
-        { status: 400 }
-      );
-    }
-
-    // 儲存搜尋歷史到資料庫
-    // 注意：searchHistory 模型可能不存在，暫時註解掉
-    // await prisma.searchHistory.create({
-    //   data: {
-    //     query,
-    //     userId: userId || null,
-    //     userType: userType || 'guest',
-    //     ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-    //     userAgent: request.headers.get('user-agent') || 'unknown'
-    //   }
-    // });
-
-    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('儲存搜尋歷史錯誤:', error);
-    return NextResponse.json(
-      { error: '儲存搜尋歷史時發生錯誤' },
-      { status: 500 }
+    console.error('搜尋 API 錯誤:', error);
+    return createErrorResponse(
+      ErrorCode.INTERNAL_ERROR,
+      SYSTEM_ERRORS.INTERNAL_ERROR,
+      error instanceof Error ? error.message : '未知錯誤',
+      500
     );
   }
-}
+});
