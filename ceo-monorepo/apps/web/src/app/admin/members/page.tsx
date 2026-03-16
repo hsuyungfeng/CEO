@@ -56,7 +56,7 @@ export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<string>('')
+  const [status, setStatus] = useState<string>('all')
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState('desc')
   const [pagination, setPagination] = useState<Pagination>({
@@ -165,7 +165,7 @@ export default function MembersPage() {
                   <SelectValue placeholder="全部狀態" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部狀態</SelectItem>
+                  <SelectItem value="all">全部狀態</SelectItem>
                   <SelectItem value="ACTIVE">啟用中</SelectItem>
                   <SelectItem value="INACTIVE">未啟用</SelectItem>
                   <SelectItem value="SUSPENDED">已停權</SelectItem>
