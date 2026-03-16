@@ -75,33 +75,9 @@ const navigation: NavigationItem[] = [
     href: '/admin/members',
     icon: Users,
   },
-  { 
-    name: '內容管理', 
-    href: '/admin/content', 
-    icon: FileText,
-    children: [
-      { name: '文章管理', href: '/admin/content/articles', icon: FileText },
-      { name: 'FAQ 管理', href: '/admin/content/faqs', icon: HelpCircle },
-      { name: '公告管理', href: '/admin/content/announcements', icon: Bell },
-      { name: '郵件模板', href: '/admin/content/email-templates', icon: Mail },
-    ]
-  },
-  { 
-    name: '系統設定', 
-    href: '/admin/settings', 
-    icon: Settings,
-    children: [
-      { name: '基本設定', href: '/admin/settings/general', icon: Settings },
-      { name: '付款設定', href: '/admin/settings/payment', icon: CreditCard },
-      { name: '物流設定', href: '/admin/settings/shipping', icon: Truck },
-      { name: '通知設定', href: '/admin/settings/notifications', icon: Bell },
-      { name: '安全設定', href: '/admin/settings/security', icon: Shield },
-      { name: 'API 設定', href: '/admin/settings/api', icon: Database },
-    ]
-  },
-  { 
-    name: '聯絡訊息', 
-    href: '/admin/messages', 
+  {
+    name: '聯絡訊息',
+    href: '/admin/messages',
     icon: MessageSquare,
     badge: '12'
   },
