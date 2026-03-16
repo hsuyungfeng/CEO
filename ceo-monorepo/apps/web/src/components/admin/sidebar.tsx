@@ -70,16 +70,10 @@ const navigation: NavigationItem[] = [
       { name: '退款申請', href: '/admin/orders/refunds', icon: CreditCard, badge: '3' },
     ]
   },
-  { 
-    name: '會員管理', 
-    href: '/admin/members', 
+  {
+    name: '會員管理',
+    href: '/admin/members',
     icon: Users,
-    children: [
-      { name: '所有會員', href: '/admin/members', icon: Users },
-      { name: '供應商管理', href: '/admin/members/suppliers', icon: Building },
-      { name: '會員等級', href: '/admin/members/levels', icon: Shield },
-      { name: '會員統計', href: '/admin/members/stats', icon: BarChart3 },
-    ]
   },
   { 
     name: '內容管理', 
