@@ -127,10 +127,15 @@ export function useTheme() {
  */
 export function ThemeToggle() {
   const { theme, resolvedTheme, toggleTheme } = useTheme();
-  
-   const getThemeIcon = () => {
-    // 伺服器端渲染時，總是返回淺色模式圖標以避免 hydration 錯誤
-    if (typeof window === 'undefined') {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const getThemeIcon = () => {
+    // 未掛載時返回空白，避免 hydration 不匹配
+    if (!mounted) {
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -223,12 +228,12 @@ export function ThemeToggle() {
     );
   };
 
-   const getThemeLabel = () => {
-    // 伺服器端渲染時，總是返回「淺色模式」以避免 hydration 錯誤
-    if (typeof window === 'undefined') {
+  const getThemeLabel = () => {
+    // 未掛載時返回預設，避免 hydration 不匹配
+    if (!mounted) {
       return '淺色模式';
     }
-    
+
     if (theme === 'system') {
       return '系統主題';
     }
