@@ -77,7 +77,7 @@ export default function MembersPage() {
         sortBy,
         sortOrder,
         ...(search && { search }),
-        ...(status && { status }),
+        ...(status && status !== 'all' && { status }),
       })
 
       const response = await fetch(`/api/admin/users?${params}`)
