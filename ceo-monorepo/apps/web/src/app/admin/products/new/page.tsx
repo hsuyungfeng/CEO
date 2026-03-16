@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import PriceTierForm, { PriceTier as PriceTierType } from '@/components/admin/price-tier-form'
+import GroupBuyingTimeForm from '@/components/admin/group-buying-time-form'
 import { toast } from 'sonner'
 
 export default function NewProductPage() {
@@ -18,12 +19,25 @@ export default function NewProductPage() {
   const [priceTiers, setPriceTiers] = useState<PriceTierType[]>([
     { minQty: 1, price: 0 },
   ])
+  const [startDate, setStartDate] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [endTime, setEndTime] = useState('')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+
+    // 組合開始和結束時間
+    const startDateTime = startDate && startTime
+      ? new Date(`${startDate}T${startTime}:00`).toISOString()
+      : null
+    const endDateTime = endDate && endTime
+      ? new Date(`${endDate}T${endTime}:00`).toISOString()
+      : null
+
     const data = {
       name: formData.get('name') as string,
       subtitle: formData.get('subtitle') as string,
@@ -34,8 +48,8 @@ export default function NewProductPage() {
       firmId: formData.get('firmId') as string,
       isActive: formData.get('isActive') === 'on',
       isFeatured: formData.get('isFeatured') === 'on',
-      startDate: formData.get('startDate') as string,
-      endDate: formData.get('endDate') as string,
+      startDate: startDateTime,
+      endDate: endDateTime,
       priceTiers: priceTiers.filter(tier => tier.minQty > 0 && tier.price > 0),
     }
 
@@ -168,21 +182,16 @@ export default function NewProductPage() {
             </Card>
 
             {/* 團購時間 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>團購時間</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="startDate">開始時間</Label>
-                  <Input id="startDate" name="startDate" type="datetime-local" />
-                </div>
-                <div>
-                  <Label htmlFor="endDate">結束時間</Label>
-                  <Input id="endDate" name="endDate" type="datetime-local" />
-                </div>
-              </CardContent>
-            </Card>
+            <GroupBuyingTimeForm
+              onStartDateChange={(date, time) => {
+                setStartDate(date)
+                setStartTime(time)
+              }}
+              onEndDateChange={(date, time) => {
+                setEndDate(date)
+                setEndTime(time)
+              }}
+            />
 
             {/* 提交按鈕 */}
             <div className="sticky top-6">
