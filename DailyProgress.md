@@ -86,6 +86,9 @@
 #### 🎨 實現功能
 - ✅ **自訂簽入頁面**：建立 `/auth/signin` 支援 NextAuth 標準流程
 - ✅ **callbackUrl 支援**：登入後自動重定向到指定頁面（如 `/recommendations`）
+  - 添加 URL 解碼處理
+  - 延遲重定向確保認證狀態更新
+  - 提供預設值避免空 URL
 - ✅ **認證方式**：
   - 統一編號 + 密碼 (Credentials)
   - Google OAuth
