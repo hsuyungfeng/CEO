@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Menu, X, Bell, Search, Moon, Sun, Monitor, User, LogOut } from 'lucide-react';
+import { Menu, X, Bell, Search, Moon, Sun, Monitor, User, LogOut, ClipboardList } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useUnreadCount } from '@/contexts/websocket-context';
 import { Input } from '@/components/ui/input';
@@ -142,19 +142,11 @@ export function Header() {
               )}
             </Link>
             <Link 
-              href="/cart" 
-              className={`font-medium ${pathname === '/cart' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
-              aria-current={pathname === '/cart' ? 'page' : undefined}
+              href="/orders" 
+              className={`font-medium ${pathname === '/orders' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
+              aria-current={pathname === '/orders' ? 'page' : undefined}
             >
-              購物車
-              {cartItemCount > 0 && (
-                <span 
-                  className="ml-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                  aria-label={`購物車中有 ${cartItemCount} 件商品`}
-                >
-                  {cartItemCount}
-                </span>
-              )}
+              我的訂單
             </Link>
           </nav>
 
@@ -210,17 +202,9 @@ export function Header() {
               </Button>
             </Link>
             
-            <Link href="/cart" aria-label="購物車">
+            <Link href="/orders" aria-label="我的訂單">
               <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-6 w-6" aria-hidden="true" />
-                {cartItemCount > 0 && (
-                  <span 
-                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                    aria-label={`購物車中有 ${cartItemCount} 件商品`}
-                  >
-                    {cartItemCount}
-                  </span>
-                )}
+                <ClipboardList className="h-6 w-6" aria-hidden="true" />
               </Button>
             </Link>
             
@@ -419,20 +403,12 @@ export function Header() {
                 )}
               </Link>
               <Link 
-                href="/cart" 
-                className={`font-medium py-2 ${pathname === '/cart' ? 'text-blue-600' : 'text-gray-700'}`}
+                href="/orders" 
+                className={`font-medium py-2 ${pathname === '/orders' ? 'text-blue-600' : 'text-gray-700'}`}
                 onClick={() => setMobileMenuOpen(false)}
-                aria-current={pathname === '/cart' ? 'page' : undefined}
+                aria-current={pathname === '/orders' ? 'page' : undefined}
               >
-                購物車
-                {cartItemCount > 0 && (
-                  <span 
-                    className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                    aria-label={`購物車中有 ${cartItemCount} 件商品`}
-                  >
-                    {cartItemCount}
-                  </span>
-                )}
+                我的訂單
               </Link>
                {status === 'loading' ? (
                  <Button className="w-full mt-2" disabled>

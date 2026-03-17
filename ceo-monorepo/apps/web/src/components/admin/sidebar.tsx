@@ -81,6 +81,14 @@ const navigation: NavigationItem[] = [
     icon: MessageSquare,
     badge: '12'
   },
+  {
+    name: '系統設定',
+    href: '/admin/settings',
+    icon: Settings,
+    children: [
+      { name: '平台資訊設定', href: '/admin/settings/company-info', icon: Building },
+    ]
+  },
 ]
 
 interface NavigationItemProps {

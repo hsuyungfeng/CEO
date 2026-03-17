@@ -7,27 +7,35 @@ import { Recommendation } from '@/types/recommendation';
 interface RecommendationListProps {
   userId: string;
   initialLimit?: number;
+  algorithm?: 'POPULARITY' | 'HISTORY' | 'COLLABORATIVE';
 }
 
-export default function RecommendationList({ userId, initialLimit = 10 }: RecommendationListProps) {
+export default function RecommendationList({ userId, initialLimit = 10, algorithm }: RecommendationListProps) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState(initialLimit);
-  
+
   const fetchRecommendations = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`/api/recommendations?limit=${limit}`);
-      
+
+      // 構建查詢參數
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      if (algorithm) {
+        params.append('algorithm', algorithm);
+      }
+
+      const response = await fetch(`/api/recommendations?${params.toString()}`);
+
       if (!response.ok) {
         throw new Error(`獲取推薦失敗: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setRecommendations(data.data);
       } else {
@@ -40,10 +48,10 @@ export default function RecommendationList({ userId, initialLimit = 10 }: Recomm
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchRecommendations();
-  }, [limit]);
+  }, [limit, algorithm]);
   
   const handleRefresh = () => {
     fetchRecommendations();

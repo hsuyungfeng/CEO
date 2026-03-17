@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import RecommendationList from '@/components/recommendations/RecommendationList';
+import RecommendationClientComponent from '@/components/recommendations/RecommendationClientComponent';
 import { prisma } from '@/lib/prisma';
 
 export const metadata = {
@@ -10,11 +10,11 @@ export const metadata = {
 
 export default async function RecommendationsPage() {
   const session = await auth();
-  
+
   if (!session || !session.user) {
     redirect('/auth/signin?callbackUrl=/recommendations');
   }
-  
+
   // 獲取用戶的基本信息
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -27,11 +27,11 @@ export default async function RecommendationsPage() {
       lastLoginAt: true
     }
   });
-  
+
   if (!user) {
     redirect('/auth/signin');
   }
-  
+
   // 獲取用戶的採購統計
   const purchaseStats = await prisma.userPurchaseHistory.aggregate({
     where: { userId: user.id },
@@ -40,6 +40,25 @@ export default async function RecommendationsPage() {
       totalOrders: true
     }
   });
+
+  // 獲取用戶的推薦準確率（點擊率）
+  const recommendationStats = await prisma.purchaseRecommendation.aggregate({
+    where: { userId: user.id },
+    _count: {
+      id: true
+    }
+  });
+
+  const clickedRecommendations = await prisma.purchaseRecommendation.count({
+    where: {
+      userId: user.id,
+      clicked: true
+    }
+  });
+
+  const recommendationAccuracy = recommendationStats._count.id > 0
+    ? Math.round((clickedRecommendations / recommendationStats._count.id) * 100)
+    : 0;
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -48,7 +67,7 @@ export default async function RecommendationsPage() {
         <p className="text-gray-600">
           根據您的採購歷史和市場趨勢，為您推薦合適的產品和供應商
         </p>
-        
+
         {/* 用戶統計卡片 */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow p-4">
@@ -66,7 +85,7 @@ export default async function RecommendationsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
@@ -82,7 +101,7 @@ export default async function RecommendationsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
@@ -93,56 +112,17 @@ export default async function RecommendationsPage() {
               <div>
                 <p className="text-sm text-gray-500">推薦準確率</p>
                 <p className="text-2xl font-semibold">
-                  {/* 這裡可以後續計算推薦點擊率 */}
-                  85%
+                  {recommendationAccuracy}%
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* 推薦列表 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">為您推薦的產品</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                系統根據您的採購歷史、產品熱門度和相似用戶的選擇為您推薦
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                重新整理推薦
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                查看所有產品
-              </button>
-            </div>
-          </div>
-          
-          {/* 推薦算法選擇 */}
-          <div className="mt-4 flex space-x-4">
-            <span className="text-sm text-gray-600">推薦算法：</span>
-            <div className="flex space-x-2">
-              {['全部', '熱門產品', '歷史相似', '協同過濾'].map((algo) => (
-                <button
-                  key={algo}
-                  className={`px-3 py-1 text-sm rounded-full ${algo === '全部' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                >
-                  {algo}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        <div className="p-6">
-          <RecommendationList userId={user.id} />
-        </div>
-      </div>
-      
+
+      {/* 推薦列表和控制 */}
+      <RecommendationClientComponent userId={user.id} />
+
       {/* 推薦說明 */}
       <div className="mt-8 bg-blue-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-blue-800 mb-2">推薦系統說明</h3>

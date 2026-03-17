@@ -20,6 +20,7 @@ const SKIP_CSRF_PATHS = [
   '/api/push/vapid-key',
   '/api/push/subscribe',
   '/api/push/unsubscribe',
+  '/api/admin/settings',
 ];
 
 // Security headers configuration
