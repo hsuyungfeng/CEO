@@ -114,6 +114,7 @@ function SignInContent() {
                   inputMode="numeric"
                   pattern="[0-9]{8}"
                   title="統一編號必須是8位數字"
+                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">
@@ -140,6 +141,7 @@ function SignInContent() {
                   aria-describedby={error ? 'error-message' : undefined}
                   minLength={6}
                   title="密碼至少需要6位"
+                  autoComplete="current-password"
                 />
               </div>
             </CardContent>
