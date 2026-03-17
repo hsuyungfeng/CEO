@@ -59,7 +59,7 @@ export default function RecommendationCard({ recommendation, onAction }: Recomme
       await handleAction('click');
 
       // 然後調用加入購物車 API
-      const response = await fetch('/api/cart/items', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +67,6 @@ export default function RecommendationCard({ recommendation, onAction }: Recomme
         body: JSON.stringify({
           productId: recommendation.product.id,
           quantity: recommendation.product.priceTiers?.[0]?.minQty || 1,
-          supplierId: recommendation.supplier?.id,
         }),
       });
 

@@ -51,7 +51,7 @@ export default function RecommendationList({ userId, initialLimit = 10, algorith
 
   useEffect(() => {
     fetchRecommendations();
-  }, [limit, algorithm]);
+  }, [limit, algorithm, userId]);
   
   const handleRefresh = () => {
     fetchRecommendations();
