@@ -9,56 +9,70 @@ export const metadata = {
 };
 
 export default async function RecommendationsPage() {
-  const session = await auth();
+  try {
+    const session = await auth();
 
-  if (!session || !session.user) {
-    redirect('/auth/signin?callbackUrl=/recommendations');
-  }
-
-  // 獲取用戶的基本信息
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      points: true,
-      lastLoginAt: true
+    if (!session || !session.user) {
+      redirect('/auth/signin?callbackUrl=/recommendations');
     }
-  });
 
-  if (!user) {
-    redirect('/auth/signin');
-  }
+    // 獲取用戶的基本信息
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        points: true,
+        lastLoginAt: true
+      }
+    });
 
-  // 獲取用戶的採購統計
-  const purchaseStats = await prisma.userPurchaseHistory.aggregate({
-    where: { userId: user.id },
-    _sum: {
-      totalQuantity: true,
-      totalOrders: true
+    if (!user) {
+      redirect('/auth/signin');
     }
-  });
 
-  // 獲取用戶的推薦準確率（點擊率）
-  const recommendationStats = await prisma.purchaseRecommendation.aggregate({
-    where: { userId: user.id },
-    _count: {
-      id: true
+    // 獲取用戶的採購統計
+    let purchaseStats = { _sum: { totalQuantity: null, totalOrders: null } };
+    try {
+      purchaseStats = await prisma.userPurchaseHistory.aggregate({
+        where: { userId: user.id },
+        _sum: {
+          totalQuantity: true,
+          totalOrders: true
+        }
+      });
+    } catch (err) {
+      console.error('獲取採購統計失敗:', err);
+      // 使用預設值
     }
-  });
 
-  const clickedRecommendations = await prisma.purchaseRecommendation.count({
-    where: {
-      userId: user.id,
-      clicked: true
+    // 獲取用戶的推薦準確率（點擊率）
+    let recommendationStats = { _count: { id: 0 } };
+    let clickedRecommendations = 0;
+    try {
+      recommendationStats = await prisma.purchaseRecommendation.aggregate({
+        where: { userId: user.id },
+        _count: {
+          id: true
+        }
+      });
+
+      clickedRecommendations = await prisma.purchaseRecommendation.count({
+        where: {
+          userId: user.id,
+          clicked: true
+        }
+      });
+    } catch (err) {
+      console.error('獲取推薦統計失敗:', err);
+      // 使用預設值
     }
-  });
 
-  const recommendationAccuracy = recommendationStats._count.id > 0
-    ? Math.round((clickedRecommendations / recommendationStats._count.id) * 100)
-    : 0;
+    const recommendationAccuracy = recommendationStats._count.id > 0
+      ? Math.round((clickedRecommendations / recommendationStats._count.id) * 100)
+      : 0;
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -151,5 +165,20 @@ export default async function RecommendationsPage() {
         </div>
       </div>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('推薦頁面錯誤:', error);
+    // 返回一個簡單的錯誤頁面，而不是完全重定向
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h1 className="text-2xl font-bold text-red-900 mb-2">加載推薦失敗</h1>
+          <p className="text-red-700 mb-4">系統無法加載推薦頁面，請稍後再試或聯絡客服</p>
+          <a href="/" className="inline-block px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            返回首頁
+          </a>
+        </div>
+      </div>
+    );
+  }
 }
