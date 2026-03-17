@@ -9,29 +9,30 @@ export const metadata = {
 };
 
 export default async function RecommendationsPage() {
+  const session = await auth();
+
+  if (!session || !session.user) {
+    redirect('/auth/signin?callbackUrl=/recommendations');
+  }
+
+  // 獲取用戶的基本信息
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      points: true,
+      lastLoginAt: true
+    }
+  });
+
+  if (!user) {
+    redirect('/auth/signin');
+  }
+
   try {
-    const session = await auth();
-
-    if (!session || !session.user) {
-      redirect('/auth/signin?callbackUrl=/recommendations');
-    }
-
-    // 獲取用戶的基本信息
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        points: true,
-        lastLoginAt: true
-      }
-    });
-
-    if (!user) {
-      redirect('/auth/signin');
-    }
 
     // 獲取用戶的採購統計
     let purchaseStats = { _sum: { totalQuantity: null, totalOrders: null } };
@@ -73,8 +74,8 @@ export default async function RecommendationsPage() {
     const recommendationAccuracy = recommendationStats._count.id > 0
       ? Math.round((clickedRecommendations / recommendationStats._count.id) * 100)
       : 0;
-  
-  return (
+
+    return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">採購推薦</h1>
