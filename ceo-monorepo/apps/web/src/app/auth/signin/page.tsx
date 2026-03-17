@@ -46,18 +46,24 @@ function SignInContent() {
         taxId,
         password,
         redirect: false,
-        callbackUrl,
+        callbackUrl: callbackUrl || '/',
       });
 
-      if (!result?.ok) {
+      if (!result?.ok || result?.error) {
         setError(result?.error || '登入失敗，請稍後再試');
         setLoading(false);
         return;
       }
 
-      // 登入成功，重新導向到 callbackUrl
-      router.push(callbackUrl);
-      router.refresh();
+      // 登入成功，等待 auth 狀態更新後重新導向
+      // 確保導向到正確的 URL（解碼 callbackUrl）
+      setTimeout(() => {
+        const redirectUrl = callbackUrl && callbackUrl !== '/'
+          ? decodeURIComponent(callbackUrl)
+          : '/';
+        router.push(redirectUrl);
+        router.refresh();
+      }, 100);
 
     } catch (err) {
       console.error('登入錯誤:', err);
