@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Recommendation } from '@/types/recommendation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,13 +12,15 @@ interface RecommendationCardProps {
 }
 
 export default function RecommendationCard({ recommendation, onAction }: RecommendationCardProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [actionCompleted, setActionCompleted] = useState<string | null>(null);
-  
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
   const handleAction = async (action: 'view' | 'click' | 'dismiss') => {
     try {
       setIsLoading(true);
-      
+
       const response = await fetch(`/api/recommendations/${recommendation.id}`, {
         method: 'PUT',
         headers: {
@@ -25,16 +28,10 @@ export default function RecommendationCard({ recommendation, onAction }: Recomme
         },
         body: JSON.stringify({ action }),
       });
-      
+
       if (response.ok) {
         onAction(recommendation.id, action);
         setActionCompleted(action);
-        
-        // 如果是點擊操作，可以導向產品頁面
-        if (action === 'click') {
-          // 可以添加導向產品詳情頁的邏輯
-          console.log('點擊推薦，產品ID:', recommendation.product.id);
-        }
       }
     } catch (error) {
       console.error('執行推薦操作失敗:', error);
@@ -42,19 +39,54 @@ export default function RecommendationCard({ recommendation, onAction }: Recomme
       setIsLoading(false);
     }
   };
-  
-  const handleViewDetails = () => {
+
+  // 查看產品詳情頁面
+  const handleViewDetails = async () => {
+    // 記錄查看操作
     if (!recommendation.viewed) {
-      handleAction('view');
+      await handleAction('view');
     }
-    // 導向產品詳情頁
-    window.open(`/products/${recommendation.product.id}`, '_blank');
+    // 導向產品詳情頁面（同一標籤頁）
+    router.push(`/products/${recommendation.product.id}`);
   };
-  
-  const handleAddToCart = () => {
-    handleAction('click');
-    // 這裡可以添加加入購物車的邏輯
-    alert(`已將 ${recommendation.product.name} 加入採購清單`);
+
+  // 加入購物車
+  const handleAddToCart = async () => {
+    try {
+      setIsAddingToCart(true);
+
+      // 首先記錄點擊操作
+      await handleAction('click');
+
+      // 然後調用加入購物車 API
+      const response = await fetch('/api/cart/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: recommendation.product.id,
+          quantity: recommendation.product.priceTiers?.[0]?.minQty || 1,
+          supplierId: recommendation.supplier?.id,
+        }),
+      });
+
+      if (response.ok) {
+        setActionCompleted('click');
+        // 可選：顯示成功訊息或導向購物車
+        // 暫時只記錄操作
+      } else if (response.status === 401) {
+        // 未登入，導向登入頁面
+        router.push(`/auth/signin?callbackUrl=/recommendations`);
+      } else {
+        throw new Error('加入購物車失敗');
+      }
+    } catch (error) {
+      console.error('加入購物車失敗:', error);
+      // 顯示錯誤訊息
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
   
   // 計算推薦分數的視覺化表示

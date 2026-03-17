@@ -53,6 +53,12 @@ export default function RecommendationClientComponent({ userId }: Recommendation
     router.push('/products');
   };
 
+  // 處理導航錯誤
+  const handleNavigationError = (path: string) => {
+    console.error(`導航到 ${path} 失敗`);
+    // 可以添加用戶提示邏輯
+  };
+
   // 算法按鈕配置
   const algorithms: Array<{ value: Algorithm; label: string; description: string }> = [
     { value: 'ALL', label: '全部', description: '混合推薦演算法' },
