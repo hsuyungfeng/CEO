@@ -56,12 +56,13 @@ function SignInContent() {
       }
 
       // 登入成功，等待 auth 狀態更新後重新導向
-      // 確保導向到正確的 URL（解碼 callbackUrl）
+      // 確保導向到正確的 URL
       setTimeout(() => {
-        const redirectUrl = callbackUrl && callbackUrl !== '/'
-          ? decodeURIComponent(callbackUrl)
-          : '/';
-        router.push(redirectUrl);
+        // searchParams.get() 已自動解碼，直接使用
+        // 如果 callbackUrl 為空或 '/'，則導向首頁
+        const finalUrl = callbackUrl || '/';
+        console.log('重定向到:', finalUrl);
+        router.push(finalUrl);
         router.refresh();
       }, 100);
 
