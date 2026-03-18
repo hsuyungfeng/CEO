@@ -5,23 +5,36 @@ import { getAuthData } from '@/lib/auth-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    // 🔓 測試模式：返回管理員資訊
-    if (process.env.NODE_ENV === 'development') {
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: 'test-admin-id',
-          email: 'test@admin.com',
-          name: '管理員',
-          taxId: '88888888',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-        }
-      });
-    }
+    // 調試 auth 問題：檢查 session cookies 是否被正確傳遞
+    console.log('[/api/auth/me] Request cookies:', {
+      cookieHeader: request.headers.get('cookie') ? 'Present' : 'Missing',
+      authHeader: request.headers.get('authorization') ? 'Present' : 'Missing',
+    });
 
     // 使用統一的 auth helper 驗證使用者（支援 Bearer Token 和 Session Cookies）
     const authData = await getAuthData(request);
+
+    // 調試：如果 auth 失敗，記錄詳細信息
+    if (!authData?.user) {
+      console.log('[/api/auth/me] Auth failed - no authData or user');
+      console.log('[/api/auth/me] 開發模式下測試用 fallback...');
+
+      // 🔓 只在開發模式且 auth 失敗時返回測試用戶 (用于調試)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[/api/auth/me] Returning test admin user for development');
+        return NextResponse.json({
+          success: true,
+          user: {
+            id: 'test-admin-id',
+            email: 'test@admin.com',
+            name: '管理員',
+            taxId: '88888888',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+          }
+        });
+      }
+    }
 
     if (!authData?.user) {
       return NextResponse.json(

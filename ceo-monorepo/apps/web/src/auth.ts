@@ -330,15 +330,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async jwt({ token, user }) {
       if (user) {
+        console.log('[JWT Callback] User data available:', { id: user.id, role: user.role });
         token.id = user.id;
         token.taxId = user.taxId;
         token.role = user.role;
         token.status = user.status;
         token.emailVerified = user.emailVerified === true;
+      } else {
+        console.log('[JWT Callback] No user data, token might be refreshed');
       }
       return token;
     },
     async session({ session, token }) {
+      console.log('[Session Callback] Session creation:', { hasToken: !!token, tokenId: token?.id, sessionUser: !!session.user });
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.taxId = token.taxId as string;
@@ -347,6 +351,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // NextAuth v5 uses Date|null for emailVerified; we store boolean in JWT
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(session.user as any).emailVerified = token.emailVerified as boolean;
+        console.log('[Session Callback] Session populated successfully:', { id: session.user.id, role: session.user.role });
+      } else {
+        console.log('[Session Callback] Session not populated:', { hasSessionUser: !!session.user, hasToken: !!token });
       }
       return session;
     },

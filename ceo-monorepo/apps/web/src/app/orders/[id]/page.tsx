@@ -1,29 +1,65 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft } from 'lucide-react';
 
-// Mock data for order detail
-const mockOrder = {
-  id: 1,
-  orderNo: '20260207-0001',
-  status: 'COMPLETED',
-  totalAmount: 1250,
-  date: '2026-02-07',
-  note: '請盡快安排出貨',
-  shippingAddress: '台北市中山區南京東路一段123號',
-  billingAddress: '台北市中山區南京東路一段123號',
-  items: [
-    { id: 1, name: '醫療口罩', quantity: 3, price: 150, image: '/placeholder-product.svg', unit: '盒' },
-    { id: 2, name: '酒精乾洗手', quantity: 2, price: 280, image: '/placeholder-product.svg', unit: '瓶' }
-  ]
-};
+interface OrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  image?: string;
+  unit?: string;
+}
+
+interface Order {
+  id: string;
+  orderNo?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
+  totalAmount: number;
+  createdAt: string;
+  items: OrderItem[];
+  shippingAddress?: string;
+  billingAddress?: string;
+  note?: string;
+}
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/orders/${params.id}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch order: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('[OrderDetailPage] Fetched order:', data);
+
+        // Handle both direct object and wrapper response formats
+        const orderData = data.data || data.order || data;
+        setOrder(orderData);
+      } catch (err) {
+        console.error('[OrderDetailPage] Error fetching order:', err);
+        setError(err instanceof Error ? err.message : '無法載入訂單');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [params.id]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -47,28 +83,78 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <p className="text-gray-500">載入中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <Button
+            variant="outline"
+            className="mb-6 flex items-center"
+            onClick={() => router.push('/orders')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            返回訂單列表
+          </Button>
+          <div className="text-center py-12">
+            <p className="text-red-500">錯誤：{error || '訂單不存在'}</p>
+            <Button
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              重新載入
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="mb-6 flex items-center"
           onClick={() => router.push('/orders')}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           返回訂單列表
         </Button>
-        
+
         <Card className="mb-6">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                <div>
-                 <CardTitle>訂單編號: {mockOrder.orderNo}</CardTitle>
-                 <div className="text-sm text-muted-foreground">訂購日期: {mockOrder.date}</div>
+                 <CardTitle>訂單編號: {order.orderNo || order.id}</CardTitle>
+                 <div className="text-sm text-muted-foreground">訂購日期: {formatDate(order.createdAt)}</div>
                </div>
               <div className="mt-2 sm:mt-0">
-                <Badge variant={getStatusVariant(mockOrder.status)}>
-                  {getStatusText(mockOrder.status)}
+                <Badge variant={getStatusVariant(order.status)}>
+                  {getStatusText(order.status)}
                 </Badge>
               </div>
             </div>
@@ -77,46 +163,48 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-lg font-semibold mb-3">配送資訊</h3>
-                <p className="text-gray-600">{mockOrder.shippingAddress}</p>
+                <p className="text-gray-600">{order.shippingAddress || '未提供'}</p>
               </div>
               <div>
                 <h3 className="text-lg font-semibold mb-3">發票資訊</h3>
-                <p className="text-gray-600">{mockOrder.billingAddress}</p>
+                <p className="text-gray-600">{order.billingAddress || '未提供'}</p>
               </div>
             </div>
-            
-            {mockOrder.note && (
+
+            {order.note && (
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-3">訂單備註</h3>
-                <p className="text-gray-600">{mockOrder.note}</p>
+                <p className="text-gray-600">{order.note}</p>
               </div>
             )}
           </CardContent>
         </Card>
-        
+
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>訂單明細</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockOrder.items.map((item) => (
+              {order.items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between pb-4 border-b">
                   <div className="flex items-center">
-                    <div className="w-16 h-16 bg-gray-200 mr-4">
-                      <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
+                    {item.image && (
+                      <div className="w-16 h-16 bg-gray-200 mr-4">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
                     <div>
                       <h4 className="font-medium">{item.name}</h4>
-                      <p className="text-sm text-gray-600">{item.quantity} {item.unit}</p>
+                      <p className="text-sm text-gray-600">{item.quantity} {item.unit || '個'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${item.price}/{item.unit}</p>
+                    <p className="font-medium">${item.price}/{item.unit || '個'}</p>
                     <p className="text-sm text-gray-600">${item.price * item.quantity}</p>
                   </div>
                 </div>
@@ -124,22 +212,18 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex justify-end">
               <div className="w-full md:w-1/3">
                 <div className="flex justify-between py-2">
                   <span>小計</span>
-                  <span>${mockOrder.totalAmount}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span>運費</span>
-                  <span>$150</span>
+                  <span>${order.totalAmount}</span>
                 </div>
                 <div className="flex justify-between py-2 border-t font-bold text-lg">
                   <span>總計</span>
-                  <span>${mockOrder.totalAmount + 150}</span>
+                  <span>${order.totalAmount}</span>
                 </div>
               </div>
             </div>

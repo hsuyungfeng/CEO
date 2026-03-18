@@ -94,9 +94,18 @@ async function validateBearerToken(request: NextRequest) {
  */
 async function validateSession() {
   try {
+    console.log('[validateSession] Calling auth()...');
     const session = await auth();
 
+    console.log('[validateSession] Session result:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      userRole: session?.user?.role,
+    });
+
     if (!session?.user?.id) {
+      console.log('[validateSession] No user ID in session');
       return null;
     }
 
@@ -106,21 +115,24 @@ async function validateSession() {
     const user = await findUserById(userId);
 
     if (!user) {
+      console.log('[validateSession] User not found in DB:', userId);
       return null;
     }
 
     // Check user status
     if (!isUserActive(user)) {
+      console.log('[validateSession] User inactive:', user.status);
       return null;
     }
-    
+
+    console.log('[validateSession] Validation successful:', userId);
     return {
       id: user.id,
       userId: user.id,
       user: user
     };
   } catch (error) {
-    console.error('Session 驗證錯誤:', error);
+    console.error('[validateSession] Session validation error:', error);
     return null;
   }
 }

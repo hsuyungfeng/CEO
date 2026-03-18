@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(head -60 /home/hsu/Desktop/CEO/ceo-monorepo/apps/web/src/app/orders/[id]/page.tsx)"
+    ],
+    "additionalDirectories": [
+      "/home/hsu/Desktop/CEO",
+      "/home/hsu/.claude/projects/-home-hsu-Desktop-CEO/memory"
+    ]
+  }
+}
