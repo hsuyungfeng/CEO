@@ -3,7 +3,8 @@
     "allow": [
       "Bash(head -60 /home/hsu/Desktop/CEO/ceo-monorepo/apps/web/src/app/orders/[id]/page.tsx)",
       "Bash(/home/hsu/Desktop/CEO/DailyProgress.md:*)",
-      "Bash(/home/hsu/Desktop/CEO/Gem3Plan.md:*)"
+      "Bash(/home/hsu/Desktop/CEO/Gem3Plan.md:*)",
+      "Bash(/tmp/sidebar_patch.txt:*)"
     ],
     "additionalDirectories": [
       "/home/hsu/Desktop/CEO",

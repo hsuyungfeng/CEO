@@ -19,7 +19,7 @@ import { auditLogger } from '@/lib/audit-logger';
 // ==================== 查詢參數驗證 ====================
 
 const GetSuppliersQuerySchema = z.object({
-  status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ALL']).optional().default('ACTIVE'),
+  status: z.enum(['PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED', 'ALL']).optional().default('ALL'),
   page: z.coerce.number().int().positive().optional().default(PAGINATION.DEFAULT_PAGE),
   limit: z.coerce.number().int().positive().max(PAGINATION.MAX_LIMIT).optional().default(PAGINATION.DEFAULT_LIMIT),
   search: z.string().optional().default(''),
