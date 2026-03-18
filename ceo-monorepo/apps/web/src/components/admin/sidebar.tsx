@@ -71,6 +71,11 @@ const navigation: NavigationItem[] = [
     ]
   },
   {
+    name: '供應商管理',
+    href: '/admin/suppliers',
+    icon: Building,
+  },
+    {
     name: '會員管理',
     href: '/admin/members',
     icon: Users,

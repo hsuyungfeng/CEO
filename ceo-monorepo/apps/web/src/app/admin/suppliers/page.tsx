@@ -1,0 +1,121 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import SuppliersTable from '@/components/admin/suppliers-table';
+
+interface Supplier {
+  id: string;
+  name: string;
+  taxId: string;
+  email: string;
+  phone?: string;
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
+  mainAccount?: {
+    accountBalance: number;
+  };
+  createdAt: string;
+}
+
+export default function SuppliersPage() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        setLoading(true);
+        const url = new URL('/api/suppliers', window.location.origin);
+        if (statusFilter) url.searchParams.append('status', statusFilter);
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error(`Failed to fetch suppliers: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('[SuppliersPage] Fetched suppliers:', data);
+
+        const suppliersList = Array.isArray(data) ? data : (data.data || data.suppliers || []);
+        setSuppliers(suppliersList);
+      } catch (err) {
+        console.error('[SuppliersPage] Error fetching suppliers:', err);
+        setError(err instanceof Error ? err.message : '無法載入供應商列表');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSuppliers();
+  }, [statusFilter]);
+
+  const filteredSuppliers = suppliers.filter(supplier =>
+    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier.taxId.includes(searchTerm)
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">供應商管理</h1>
+        <div className="text-center py-12">
+          <p className="text-gray-500">載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">供應商管理</h1>
+        <div className="text-center py-12">
+          <p className="text-red-500">錯誤：{error}</p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            重新載入
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">供應商管理</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>篩選</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4">
+            <Input
+              placeholder="搜尋供應商名稱或統一編號..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border rounded-md"
+            >
+              <option value="">所有狀態</option>
+              <option value="PENDING">待審核</option>
+              <option value="ACTIVE">已啟用</option>
+              <option value="SUSPENDED">已停用</option>
+              <option value="REJECTED">已拒絕</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <SuppliersTable suppliers={filteredSuppliers} onRefresh={() => window.location.reload()} />
+    </div>
+  );
+}
