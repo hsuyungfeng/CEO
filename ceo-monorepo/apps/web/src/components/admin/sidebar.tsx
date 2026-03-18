@@ -76,6 +76,11 @@ const navigation: NavigationItem[] = [
     icon: Building,
   },
     {
+    name: '團購管理',
+    href: '/admin/groups',
+    icon: Users,
+  },
+    {
     name: '會員管理',
     href: '/admin/members',
     icon: Users,
