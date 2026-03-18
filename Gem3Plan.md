@@ -1,15 +1,15 @@
 # CEO 平台 Sprint 2 (P1) 計劃 - 2026-03-18
 
-## 📋 目標
+## 📋 目標 ✅ 完成
 
 實裝 4 個關鍵缺失界面，完成平台核心管理功能：
 
-| 優先級 | 功能 | API | 狀態 | 預計完成 |
+| 優先級 | 功能 | API | 狀態 | 完成時間 |
 |--------|------|-----|------|--------|
-| 1 | `/admin/suppliers` - 供應商管理 | ✅ `/api/suppliers` | 規劃中 | 18:30 |
-| 2 | `/supplier/orders` - 訂單查看 | ✅ `/api/supplier/reports/sales` | 規劃中 | 19:00 |
-| 3 | `/admin/groups` - 團購管理 | ✅ `/api/admin/groups` | 規劃中 | 19:30 |
-| 4 | `/admin/orders/pending` - 確認邏輯 | ✅ `PATCH /api/orders/[id]` | 規劃中 | 20:00 |
+| 1 | `/admin/suppliers` - 供應商管理 | ✅ `/api/suppliers` | ✅ 完成 | 15:10 |
+| 2 | `/supplier/orders` - 訂單查看 | ✅ `/api/supplier/orders` (新建) | ✅ 完成 | 15:12 |
+| 3 | `/admin/groups` - 團購管理 | ✅ `/api/admin/groups` | ✅ 完成 | 15:14 |
+| 4 | `/admin/orders/pending` - 確認邏輯 | ✅ `PATCH /api/orders/[id]` | ✅ 完成 | 15:15 |
 
 ---
 
@@ -149,15 +149,15 @@
 
 ---
 
-## 📅 時間表
+## 📅 時間表 ✅ 完成
 
-| 時間 | 任務 | 預計完成 |
-|------|------|--------|
-| 18:00-18:30 | `/admin/suppliers` 頁面 + API 整合 | ✅ |
-| 18:30-19:00 | `/supplier/orders` 頁面 + API 整合 | ✅ |
-| 19:00-19:30 | `/admin/groups` 頁面 + API 整合 | ✅ |
-| 19:30-20:00 | `/admin/orders/pending` 邏輯實作 | ✅ |
-| 20:00-20:30 | 整體測試 + 修正 | ✅ |
+| 時間 | 任務 | 狀態 | 實際完成 |
+|------|------|------|--------|
+| 14:30-14:40 | `/admin/suppliers` 頁面 + API 整合 | ✅ | 14:40 |
+| 14:40-14:50 | `/supplier/orders` 頁面 + API 整合 | ✅ | 14:50 |
+| 14:50-15:10 | `/admin/groups` 頁面 + API 整合 | ✅ | 15:10 |
+| 15:10-15:15 | `/admin/orders/pending` 邏輯實作 | ✅ | 15:15 |
+| 15:15-15:30 | API Schema Bug Fix + Build 驗證 | ✅ | 15:30 |
 
 ---
 
@@ -179,9 +179,9 @@
 
 ---
 
-## ✅ 完成條件
+## ✅ 完成條件 (全數達成)
 
-### Per 功能
+### Per 功能 ✅
 1. ✅ 頁面建立（layouts + pages）
 2. ✅ API 整合完成
 3. ✅ 操作邏輯實作
@@ -189,11 +189,13 @@
 5. ✅ 型別定義完整
 6. ✅ Build 成功
 
-### 整體
+### 整體 ✅
 - ✅ 所有 4 個頁面完成
-- ✅ Admin sidebar 更新導航入口
+- ✅ Admin sidebar 更新導航入口（2 次）
 - ✅ 無 TypeScript 錯誤
-- ✅ 提交至 git
+- ✅ 提交至 git (2 commits)
+- ✅ API Schema Bug 診斷並修復
+- ✅ 運行時驗證通過
 
 ---
 

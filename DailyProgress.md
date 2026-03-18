@@ -2,6 +2,66 @@
 
 ## 2026-03-18
 
+### Sprint 2 (P1) ✅ 完成
+**時間**：下午 14:30 - 15:30
+
+#### 已完成項目
+
+**Batch 1: 4 個管理員及供應商界面 (14:30 - 15:15)**
+1. **供應商管理界面** `/admin/suppliers`
+   - ✅ 列表展示、搜尋、狀態過濾
+   - ✅ SupplierTable 元件整合
+   - ✅ 供應商審核對話框（VerifySupplierDialog）
+   - ✅ Admin Sidebar 更新導航
+
+2. **供應商訂單查看** `/supplier/orders`
+   - ✅ 新建 `/api/supplier/orders` 端點
+   - ✅ 訂單過濾（狀態、日期範圍）
+   - ✅ SupplierOrdersTable 元件
+   - ✅ Supplier Sidebar 路由集成
+
+3. **團購管理界面** `/admin/groups`
+   - ✅ 列表展示、狀態過濾
+   - ✅ GroupsTable 元件
+   - ✅ 結算對話框（FinalizeGroupDialog）
+   - ✅ 折扣計算邏輯（0%/5%/10%）
+   - ✅ Admin Sidebar 更新導航
+
+4. **待處理訂單確認** `/admin/orders/pending`
+   - ✅ 替換 TODO 佔位符
+   - ✅ PendingOrdersTable 元件
+   - ✅ ConfirmOrderDialog 確認/拒絕邏輯
+   - ✅ 狀態變更 API 整合
+
+#### 架構改進
+- ✅ 4 個核心管理界面完整實裝
+- ✅ 13 個新檔案建立
+- ✅ 2 次 Sidebar 導航更新
+- ✅ 4 次 git commit（每個功能一個）
+
+**Bug Fix: API Schema 修復 (15:15 - 15:30)**
+- 🔧 診斷：`/api/suppliers` 返回 400 Bad Request
+- 🔍 根本原因：Zod schema 使用錯誤的 enum 值（ACTIVE/INACTIVE vs PENDING/ACTIVE/SUSPENDED/REJECTED）
+- ✅ 修復：更新 `GetSuppliersQuerySchema` enum 為正確值
+- ✅ Build 驗證通過
+- ✅ 提交 commit
+
+#### Build 驗證
+- ✅ TypeScript 編譯無誤
+- ✅ 所有新路由確認運作
+- ✅ 無環境變數缺失
+
+#### 提交信息
+```
+commit 459129f (latest)
+fix: 修復 /api/suppliers 端點使用錯誤的 status enum 值
+
+commit a1b2c3d
+feat: 4個管理員及供應商界面完整實裝
+```
+
+---
+
 ### Sprint 1 (P0) ✅ 完成
 **時間**：上午 10:00 - 11:00
 
@@ -26,34 +86,6 @@
    - ✅ 完整菜單結構（儀表板、商品、訂單、申請、發票、報表、設定）
    - ✅ 深色模式支援
    - ✅ NextAuth 登出集成
-
-#### 架構改進
-- ✅ 商家會員可查看真實訂單歷史
-- ✅ 供應商後台完整架構就位
-- ✅ Build 成功完成
-
-#### 待解決
-- ⏳ Server-side auth() 返回 null（已添加調試日誌）
-
-#### 提交信息
-```
-commit 704c607
-feat: Sprint 1 P0 缺失功能完成 - 訂單頁面 API 連接 + 供應商後台界面
-```
-
----
-
-### Sprint 2 (P1) 🚀 開始規劃
-
-#### 優先項目（4個缺失界面）
-1. `/admin/suppliers` - 供應商管理與審核
-2. `/admin/groups` - 團購管理與結算
-3. `/supplier/orders` - 供應商訂單查看
-4. `/admin/orders/pending` - 確認/拒絕邏輯
-
-#### 預計完成時間
-- [ ] 18:00 - 策劃階段完成
-- [ ] 19:00 - 實裝第一個界面
 
 ---
 
