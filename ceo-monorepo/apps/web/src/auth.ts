@@ -4,6 +4,7 @@ import Google from 'next-auth/providers/google';
 import Apple from 'next-auth/providers/apple';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { authConfig } from '@/auth.config';
 
 // 🔓 測試模式：禁用登入要求
 const TEST_MODE = true;
@@ -26,6 +27,7 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID || '',

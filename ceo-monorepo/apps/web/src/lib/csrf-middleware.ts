@@ -81,7 +81,7 @@ export async function validateCSRFToken(request: NextRequest) {
     );
   }
   
-  const isValid = await enhancedCSRFProtection.verifyToken(token, sessionId);
+  const isValid = await enhancedCSRFProtection.verifyCSRFToken(sessionId, token);
 
   if (!isValid) {
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip');
@@ -115,8 +115,8 @@ export async function generateCSRFToken(sessionId: string): Promise<string> {
     throw new Error('CSRF 保護未初始化，請檢查 CSRF_SECRET 環境變數');
   }
   
-  const tokenData = await enhancedCSRFProtection.createToken(sessionId);
-  return tokenData.token;
+  const token = await enhancedCSRFProtection.generateCSRFToken(sessionId);
+  return token;
 }
 
 /**

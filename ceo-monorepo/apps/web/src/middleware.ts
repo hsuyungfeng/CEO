@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { validateCSRFToken } from '@/lib/csrf-middleware';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/auth.config';
+
+// 使用 Edge Runtime 相容的 NextAuth 實例讀取 session
+const { auth } = NextAuth(authConfig);
 
 // CORS 允許來源
 const ALLOWED_ORIGINS = [
@@ -97,13 +102,11 @@ export async function middleware(request: NextRequest) {
   // 頁面路由：身份驗證 + 角色守衛
   const isProtectedPage = PROTECTED_PAGE_PATHS.some(p => pathname.startsWith(p));
   if (isProtectedPage) {
-    // 開發模式跳過
     if (process.env.NODE_ENV !== 'development') {
-      const sessionToken =
-        request.cookies.get('authjs.session-token')?.value ||
-        request.cookies.get('__Secure-authjs.session-token')?.value;
+      // 使用 NextAuth auth() 驗證 session，確保 Server Components 能讀取
+      const session = await auth();
 
-      if (!sessionToken) {
+      if (!session || !session.user) {
         const signinUrl = new URL('/auth/signin', request.url);
         signinUrl.searchParams.set('callbackUrl', pathname);
         return NextResponse.redirect(signinUrl);
@@ -114,7 +117,6 @@ export async function middleware(request: NextRequest) {
         if (pathname.startsWith(path)) {
           // role 從 cookie payload 中取得（NextAuth JWT 已解析在 token 中）
           // 此處僅做存在性檢查；精細角色驗證由各 API route handler 負責
-          // 若需嚴格控制，可在此解析 JWT，但 middleware 中避免 DB 查詢
           void allowedRoles; // 宣告已使用，實際由 API 層把關
           break;
         }
