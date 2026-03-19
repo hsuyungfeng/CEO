@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -27,8 +28,10 @@ interface SupplierProduct {
   id: string
   name: string
   SKU: string | null
+  description: string | null
   category: string | null
   unit: string | null
+  imageUrl: string | null
   price: number
   moq: number
   stock: number
@@ -49,8 +52,10 @@ export default function SupplierProductsPage() {
   const [formData, setFormData] = useState({
     name: '',
     SKU: '',
+    description: '',
     category: '',
     unit: '',
+    imageUrl: '',
     price: '',
     moq: '1',
     stock: '0',
@@ -62,8 +67,10 @@ export default function SupplierProductsPage() {
   const [editFormData, setEditFormData] = useState({
     name: '',
     SKU: '',
+    description: '',
     category: '',
     unit: '',
+    imageUrl: '',
     price: '',
     moq: '',
     stock: '',
@@ -80,27 +87,18 @@ export default function SupplierProductsPage() {
 
   async function fetchProducts() {
     try {
-      const supplierRes = await fetch('/api/suppliers')
-      const supplierData = await supplierRes.json()
-
-      if (!supplierData.success || !supplierData.data?.length) {
-        setError('您還沒有供應商帳號')
-        setLoading(false)
-        return
-      }
-
-      const supplierId = supplierData.data[0].id
-      const res = await fetch(
-        `/api/supplier/products?supplierId=${supplierId}&search=${search}&page=${page}&limit=10`
-      )
+      const params = new URLSearchParams({ page: page.toString(), limit: '10' })
+      if (search.trim()) params.set('search', search.trim())
+      const res = await fetch(`/api/supplier/products?${params}`)
       const data = await res.json()
-
       if (data.success) {
         setProducts(data.data)
-        setTotalPages(data.pagination.totalPages)
+        setTotalPages(data.pagination?.totalPages ?? 1)
+      } else {
+        setError(data.error || '載入失敗')
       }
     } catch {
-      setError('載入失敗')
+      setError('載入失敗，請稍後再試')
     } finally {
       setLoading(false)
     }
@@ -116,8 +114,10 @@ export default function SupplierProductsPage() {
         body: JSON.stringify({
           name: formData.name,
           SKU: formData.SKU || undefined,
+          description: formData.description || undefined,
           category: formData.category || undefined,
           unit: formData.unit || undefined,
+          imageUrl: formData.imageUrl || undefined,
           price: parseFloat(formData.price),
           moq: parseInt(formData.moq) || 1,
           stock: parseInt(formData.stock) || 0,
@@ -135,8 +135,10 @@ export default function SupplierProductsPage() {
         setFormData({
           name: '',
           SKU: '',
+          description: '',
           category: '',
           unit: '',
+          imageUrl: '',
           price: '',
           moq: '1',
           stock: '0',
@@ -176,8 +178,10 @@ export default function SupplierProductsPage() {
     setEditFormData({
       name: product.name,
       SKU: product.SKU || '',
+      description: product.description || '',
       category: product.category || '',
       unit: product.unit || '',
+      imageUrl: product.imageUrl || '',
       price: product.price.toString(),
       moq: product.moq.toString(),
       stock: product.stock.toString(),
@@ -202,8 +206,10 @@ export default function SupplierProductsPage() {
         body: JSON.stringify({
           name: editFormData.name,
           SKU: editFormData.SKU || undefined,
+          description: editFormData.description || undefined,
           category: editFormData.category || undefined,
           unit: editFormData.unit || undefined,
+          imageUrl: editFormData.imageUrl || undefined,
           price: parseFloat(editFormData.price) || 0,
           moq: parseInt(editFormData.moq) || 1,
           stock: parseInt(editFormData.stock) || 0,
@@ -301,6 +307,25 @@ export default function SupplierProductsPage() {
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     />
                   </div>
+                </div>
+                <div>
+                  <Label htmlFor="description">產品描述</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={2}
+                    placeholder="產品說明..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="imageUrl">圖片網址</Label>
+                  <Input
+                    id="imageUrl"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                    placeholder="https://..."
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -424,6 +449,25 @@ export default function SupplierProductsPage() {
                       onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
                     />
                   </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-description">產品描述</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                    rows={2}
+                    placeholder="產品說明..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-imageUrl">圖片網址</Label>
+                  <Input
+                    id="edit-imageUrl"
+                    value={editFormData.imageUrl}
+                    onChange={(e) => setEditFormData({ ...editFormData, imageUrl: e.target.value })}
+                    placeholder="https://..."
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

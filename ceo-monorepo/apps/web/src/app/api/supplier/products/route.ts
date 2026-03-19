@@ -1,9 +1,7 @@
-'use server'
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { auth } from '@/auth'
+import { getAuthData } from '@/lib/auth-helper'
 
 const createProductSchema = z.object({
   name: z.string().min(1, '產品名稱必填'),
@@ -22,12 +20,10 @@ const createProductSchema = z.object({
   stock: z.number().int().min(0).optional().default(0),
 })
 
-const updateProductSchema = createProductSchema.partial()
-
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const authData = await getAuthData(request)
+    if (!authData) {
       return NextResponse.json({ error: '請先登入' }, { status: 401 })
     }
 
@@ -37,14 +33,24 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    if (!supplierId) {
-      return NextResponse.json({ error: '缺少供應商ID' }, { status: 400 })
+    // 若未傳 supplierId，自動找當前用戶的供應商
+    let resolvedSupplierId = supplierId
+    if (!resolvedSupplierId) {
+      const userSupplier = await prisma.userSupplier.findFirst({
+        where: { userId: authData.userId, role: 'MAIN_ACCOUNT' },
+      })
+      if (userSupplier) {
+        resolvedSupplierId = userSupplier.supplierId
+      } else if (process.env.NODE_ENV === 'development') {
+        const first = await prisma.supplier.findFirst({ where: { status: 'ACTIVE' } })
+        resolvedSupplierId = first?.id ?? null
+      }
+      if (!resolvedSupplierId) {
+        return NextResponse.json({ success: true, data: [], pagination: { page: 1, limit, total: 0, totalPages: 0, hasNextPage: false, hasPrevPage: false } })
+      }
     }
 
-    const where: any = {
-      supplierId,
-    }
-
+    const where: Record<string, unknown> = { supplierId: resolvedSupplierId }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -55,11 +61,6 @@ export async function GET(request: NextRequest) {
     const [products, total] = await Promise.all([
       prisma.supplierProduct.findMany({
         where,
-        include: {
-          product: {
-            select: { id: true, name: true },
-          },
-        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
+      success: true,
       data: products,
       pagination: {
         page,
@@ -86,8 +88,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const authData = await getAuthData(request)
+    if (!authData) {
       return NextResponse.json({ error: '請先登入' }, { status: 401 })
     }
 
@@ -102,35 +104,65 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validationResult.data
+    const isTestMode = process.env.NODE_ENV === 'development'
 
+    // 查找供應商帳號
     const userSupplier = await prisma.userSupplier.findFirst({
-      where: {
-        userId: session.user.id,
-        role: 'MAIN_ACCOUNT',
-      },
-      include: {
-        supplier: true,
-      },
+      where: { userId: authData.userId, role: 'MAIN_ACCOUNT' },
+      include: { supplier: true },
     })
 
     if (!userSupplier) {
+      // TEST_MODE：若無供應商帳號，嘗試找第一個供應商
+      if (isTestMode) {
+        const firstSupplier = await prisma.supplier.findFirst({
+          where: { status: 'ACTIVE' },
+        })
+        if (!firstSupplier) {
+          return NextResponse.json({ error: '找不到供應商帳號（TEST MODE）' }, { status: 403 })
+        }
+
+        if (data.SKU) {
+          const existing = await prisma.supplierProduct.findUnique({
+            where: { supplierId_SKU: { supplierId: firstSupplier.id, SKU: data.SKU } },
+          })
+          if (existing) {
+            return NextResponse.json({ error: 'SKU 已存在' }, { status: 400 })
+          }
+        }
+
+        const product = await prisma.supplierProduct.create({
+          data: {
+            supplierId: firstSupplier.id,
+            name: data.name,
+            SKU: data.SKU,
+            description: data.description,
+            category: data.category,
+            unit: data.unit,
+            imageUrl: data.imageUrl || null,
+            price: data.price,
+            moq: data.moq ?? 1,
+            leadTime: data.leadTime,
+            length: data.length,
+            width: data.width,
+            height: data.height,
+            weight: data.weight,
+            stock: data.stock ?? 0,
+          },
+        })
+        return NextResponse.json({ success: true, data: product })
+      }
       return NextResponse.json({ error: '您不是供應商帳號' }, { status: 403 })
     }
 
-    if (userSupplier.supplier.status !== 'ACTIVE') {
-      return NextResponse.json({ error: '供應商帳號非active狀態' }, { status: 403 })
+    if (!isTestMode && userSupplier.supplier.status !== 'ACTIVE') {
+      return NextResponse.json({ error: '供應商帳號非 ACTIVE 狀態' }, { status: 403 })
     }
 
     if (data.SKU) {
       const existing = await prisma.supplierProduct.findUnique({
-        where: {
-          supplierId_SKU: {
-            supplierId: userSupplier.supplierId,
-            SKU: data.SKU,
-          },
-        },
+        where: { supplierId_SKU: { supplierId: userSupplier.supplierId, SKU: data.SKU } },
       })
-
       if (existing) {
         return NextResponse.json({ error: 'SKU 已存在' }, { status: 400 })
       }
@@ -146,13 +178,13 @@ export async function POST(request: NextRequest) {
         unit: data.unit,
         imageUrl: data.imageUrl || null,
         price: data.price,
-        moq: data.moq || 1,
+        moq: data.moq ?? 1,
         leadTime: data.leadTime,
         length: data.length,
         width: data.width,
         height: data.height,
         weight: data.weight,
-        stock: data.stock || 0,
+        stock: data.stock ?? 0,
       },
     })
 
