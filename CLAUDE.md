@@ -130,7 +130,7 @@ SupplierStatus: PENDING | ACTIVE | SUSPENDED | REJECTED
 
 ## 已知問題與注意事項
 
-- **Server-side `auth()` 返回 null 問題**：部分頁面（如 `/recommendations`）的 server-side session 取得異常，目前 `TEST_MODE=true` 為暫時緩解措施
+- **Server-side `auth()` 問題已修復（Phase 10.5 ✅）**：根本原因為 middleware 未使用 NextAuth auth 實例，已建立 `src/auth.config.ts`（Edge Runtime 相容設定），middleware 改用此設定初始化 NextAuth 以正確處理 session cookie。`TEST_MODE=true` 仍保留用於開發時繞過密碼驗證。
 - **Mobile app build**：`pnpm build` 從 monorepo 根目錄執行可能因 mobile 端相依缺失而失敗，請改在 `ceo-monorepo/apps/web/` 目錄執行
 - TypeScript 剩餘少數 `any` 型別（約 15-20 個）集中於 `sentry-*`、`redis-rate-limiter`、`prisma.$use`、`global-rate-limiter` 等框架整合層，屬難以消除的技術限制
 - CSRF 全域中介層已實裝於 `src/middleware.ts`（Phase 10.2 ✅ 完成）
