@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
 import { CreateProductSchema, ApiResponse } from '@/types/admin';
 
@@ -241,7 +242,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 建立查詢條件
-    const where: any = {};
+    const where: Prisma.ProductWhereInput = {};
 
     // 搜尋條件
     if (search) {

@@ -15,7 +15,7 @@ interface UserLog {
   oldValue: string | null
   newValue: string | null
   reason: string | null
-  metadata: any
+  metadata: Record<string, unknown>
   createdAt: string
   admin: {
     id: string
@@ -100,8 +100,8 @@ export default function UserLogs({ memberId }: UserLogsProps) {
         return `狀態從 ${log.oldValue || '未知'} 變更為 ${log.newValue || '未知'}`
       case 'POINTS_ADJUST':
         const metadata = log.metadata || {}
-        const amount = metadata.amount || 0
-        const type = metadata.adjustmentType || 'ADD'
+        const amount = (metadata.amount as number) || 0
+        const type = (metadata.adjustmentType as string) || 'ADD'
         return `${type === 'ADD' ? '增加' : type === 'SUBTRACT' ? '減少' : '設定'} ${Math.abs(amount)} 點`
       case 'INFO_UPDATE':
         return '更新會員資訊'

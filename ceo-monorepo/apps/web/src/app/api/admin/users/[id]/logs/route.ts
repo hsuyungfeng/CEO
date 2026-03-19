@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma, UserAction } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
 import { ApiResponse } from '@/types/admin';
 
@@ -41,9 +42,9 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     // 建立查詢條件
-    const where: any = { userId: id };
+    const where: Prisma.UserLogWhereInput = { userId: id };
     if (action) {
-      where.action = action;
+      where.action = action as UserAction;
     }
 
     // 查詢操作日誌

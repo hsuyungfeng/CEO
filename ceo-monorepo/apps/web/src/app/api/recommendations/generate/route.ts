@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { generateRecommendations } from '@/lib/services/recommendationService';
 
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate') || undefined;
     
     // 統計推薦數據
-    const whereClause: any = {};
+    const whereClause: Prisma.PurchaseRecommendationWhereInput = {};
     
     if (userId) {
       whereClause.userId = userId;

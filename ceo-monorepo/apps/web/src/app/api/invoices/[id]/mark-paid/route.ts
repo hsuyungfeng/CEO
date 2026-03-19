@@ -31,11 +31,11 @@ export async function POST(
       data: updated,
       message: `發票 ${updated.invoiceNo} 已標記為已支付`
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('標記發票為已支付錯誤:', error)
 
-    // 處理發票不存在的情況
-    if (error.code === 'P2025') {
+    // 處理發票不存在的情況（Prisma P2025 錯誤碼）
+    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'P2025') {
       return NextResponse.json(
         { error: '找不到指定的發票' },
         { status: 404 }

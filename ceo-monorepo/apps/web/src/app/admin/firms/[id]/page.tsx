@@ -78,7 +78,7 @@ export default function FirmDetailPage() {
   const [firm, setFirm] = useState<Firm | null>(null)
   const [loading, setLoading] = useState(true)
   const [productsLoading, setProductsLoading] = useState(false)
-  const [products, setProducts] = useState<any[]>([])
+  const [products, setProducts] = useState<Firm['products']>([])
   const [productsPage, setProductsPage] = useState(1)
   const [hasMoreProducts, setHasMoreProducts] = useState(true)
 
@@ -193,9 +193,9 @@ export default function FirmDetailPage() {
       toast.success('廠商更新成功')
       setIsEditDialogOpen(false)
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('更新廠商錯誤:', error)
-      toast.error(error.message || '更新廠商失敗')
+      toast.error(error instanceof Error ? error.message : '更新廠商失敗')
     } finally {
       setEditing(false)
     }

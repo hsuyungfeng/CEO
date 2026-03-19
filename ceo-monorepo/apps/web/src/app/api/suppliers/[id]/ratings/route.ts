@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { SupplierRatingQuerySchema } from '@/types/supplier-rating';
 
 // GET /api/suppliers/[id]/ratings - 獲取供應商的評分列表
@@ -52,14 +53,15 @@ export async function GET(
     const skip = (query.page - 1) * query.limit;
 
     // 構建查詢條件
-    const where: any = {
+    const where: Prisma.SupplierRatingWhereInput = {
       supplierId: id
     };
     
     if (query.minRating !== undefined || query.maxRating !== undefined) {
-      where.overallScore = {};
-      if (query.minRating !== undefined) where.overallScore.gte = query.minRating;
-      if (query.maxRating !== undefined) where.overallScore.lte = query.maxRating;
+      where.overallScore = {
+        ...(query.minRating !== undefined ? { gte: query.minRating } : {}),
+        ...(query.maxRating !== undefined ? { lte: query.maxRating } : {}),
+      };
     }
     
     if (query.hasComment === true) {

@@ -129,7 +129,16 @@ export async function PUT(
     // 使用事務更新評分並重新計算供應商統計
     const result = await prisma.$transaction(async (tx) => {
       // 準備更新數據
-      const updateData: any = {
+      const updateData: {
+        updatedAt: Date;
+        overallScore?: number;
+        qualityScore?: number;
+        deliveryScore?: number;
+        serviceScore?: number;
+        comment?: string | null;
+        photoUrls?: string[];
+        isPublic?: boolean;
+      } = {
         updatedAt: new Date()
       };
       

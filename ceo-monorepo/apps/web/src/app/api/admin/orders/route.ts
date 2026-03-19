@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
 import { OrderQuerySchema, ApiResponse } from '@/types/admin';
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 建立查詢條件
-    const where: any = {};
+    const where: Prisma.OrderWhereInput = {};
 
     // 搜尋條件（訂單編號、用戶名稱、用戶 email）
     if (search) {
@@ -71,18 +72,14 @@ export async function GET(request: NextRequest) {
 
     // 時間範圍條件
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) {
-        where.createdAt.gte = new Date(startDate);
-      }
-      if (endDate) {
-        where.createdAt.lte = new Date(endDate);
-      }
+      where.createdAt = {
+        ...(startDate ? { gte: new Date(startDate) } : {}),
+        ...(endDate ? { lte: new Date(endDate) } : {}),
+      };
     }
 
     // 建立排序條件
-    const orderBy: any = {};
-    orderBy[sortBy] = sortOrder;
+    const orderBy: Prisma.OrderOrderByWithRelationInput = { [sortBy]: sortOrder };
 
     // 查詢訂單（管理員可以看到所有訂單）
     const [orders, total] = await Promise.all([

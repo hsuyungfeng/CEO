@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 // 查詢參數驗證 schema
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 建立查詢條件
-    const where: any = {
+    const where: Prisma.ProductWhereInput = {
       isActive: true,
     };
 
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     ];
 
     // 排序條件
-    let orderBy: any = {};
+    let orderBy: Prisma.ProductOrderByWithRelationInput = {};
     if (sortBy === 'price') {
       // 價格排序需要特殊處理，使用最低階梯價格
       orderBy = {

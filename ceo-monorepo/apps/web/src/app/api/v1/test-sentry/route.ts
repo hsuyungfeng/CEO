@@ -52,19 +52,19 @@ export async function GET(request: NextRequest) {
       }
     }, { status: 200 });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 捕獲並報告錯誤
     captureError(error, {
       context: 'Sentry 測試端點錯誤',
       endpoint: '/api/v1/test-sentry'
     });
-    
+
     return NextResponse.json({
       success: false,
       data: null,
       error: {
         code: 'SENTRY_TEST_ERROR',
-        message: error.message
+        message: error instanceof Error ? error.message : String(error)
       }
     }, { status: 500 });
   }

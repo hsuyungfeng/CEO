@@ -52,14 +52,14 @@ export default function OrdersPage() {
 
       if (result.success && result.data) {
         const ordersData = Array.isArray(result.data) ? result.data : result.data.orders || [];
-        setOrders(ordersData.map((order: any) => ({
-          id: order.id,
-          orderNo: order.orderNo || `ORD-${order.id.substring(0, 8)}`,
-          buyerName: order.buyerName || '未知買家',
-          totalAmount: order.totalAmount || 0,
-          quantity: order.quantity || 0,
-          status: order.status || 'pending',
-          createdAt: order.createdAt,
+        setOrders(ordersData.map((order: Record<string, unknown>) => ({
+          id: order.id as string,
+          orderNo: (order.orderNo as string) || `ORD-${(order.id as string).substring(0, 8)}`,
+          buyerName: (order.buyerName as string) || '未知買家',
+          totalAmount: (order.totalAmount as number) || 0,
+          quantity: (order.quantity as number) || 0,
+          status: (order.status as string) || 'pending',
+          createdAt: order.createdAt as string,
         })));
       } else {
         setOrders([]);

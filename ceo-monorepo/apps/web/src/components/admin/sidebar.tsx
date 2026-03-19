@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -34,7 +34,7 @@ import { useTheme } from '@/contexts/theme-context'
 interface NavigationItem {
   name: string;
   href: string;
-  icon: any;
+  icon: React.ElementType;
   children?: NavigationItem[];
   badge?: string;
   permission?: string;

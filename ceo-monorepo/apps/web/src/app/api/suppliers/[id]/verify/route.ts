@@ -53,7 +53,12 @@ export async function POST(
 
     const { action, reason } = validationResult.data;
 
-    let updateData: any = {};
+    let updateData: {
+      status?: string;
+      isVerified?: boolean;
+      verifiedAt?: Date;
+      verifiedBy?: string;
+    } = {};
     let message = '';
 
     switch (action) {

@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     const { startDate, endDate, detailed } = query.data
 
     // 構建日期過濾條件
-    const dateFilter: any = {}
+    const dateFilter: { gte?: Date; lte?: Date } = {}
     if (startDate) {
       const start = new Date(startDate)
       start.setHours(0, 0, 0, 0)

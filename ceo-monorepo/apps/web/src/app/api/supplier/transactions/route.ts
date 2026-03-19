@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma, SupplierTransactionType } from '@prisma/client';
 import { auth } from '@/auth';
 
 export async function GET(request: NextRequest) {
@@ -33,12 +34,12 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.SupplierTransactionWhereInput = {
       supplierId: supplier.id,
     };
 
     if (type) {
-      where.type = type;
+      where.type = type as SupplierTransactionType;
     }
 
     const [transactions, total] = await Promise.all([

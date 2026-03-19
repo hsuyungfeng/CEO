@@ -124,8 +124,10 @@ export function FaqReorder({ onBack }: FaqReorderProps) {
       } else {
         toast.error(result.error || '排序更新失敗');
         if (result.errors) {
-          result.errors.forEach((error: any) => {
-            console.error(`字段 ${error.field}: ${error.message}`);
+          result.errors.forEach((error: unknown) => {
+            const field = error instanceof Error ? error.message : (error as Record<string, unknown>).field;
+            const message = error instanceof Error ? error.message : (error as Record<string, unknown>).message;
+            console.error(`字段 ${field}: ${message}`);
           });
         }
       }

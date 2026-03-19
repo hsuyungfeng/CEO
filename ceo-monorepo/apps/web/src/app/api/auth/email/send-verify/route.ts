@@ -13,7 +13,7 @@ const sendVerifySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  let body: any;
+  let body: unknown;
   try {
     body = await request.json();
     const { email, purpose = 'VERIFY_EMAIL' } = sendVerifySchema.parse(body);
@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
       expiresAt: verification.expiresAt,
     });
   } catch (error) {
-    logger.error({ err: error, email: body.email }, '發送驗證碼錯誤');
+    const bodyEmail = body !== null && typeof body === 'object' && 'email' in body ? (body as Record<string, unknown>).email : undefined;
+    logger.error({ err: error, email: bodyEmail }, '發送驗證碼錯誤');
     return NextResponse.json(
       { error: '發送驗證郵件失敗' },
       { status: 500 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 /**
  * Twilio SMS 狀態回調端點
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    const where: any = {
+    const where: Prisma.NotificationDeliveryWhereInput = {
       channel: 'SMS'
     };
 

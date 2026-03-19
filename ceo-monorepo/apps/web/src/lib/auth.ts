@@ -78,8 +78,7 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30天
   },
   callbacks: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async jwt({ token, user }: { token: Record<string, unknown>; user?: Record<string, unknown> }) {
       if (user) {
         token.id = user.id;
         token.taxId = user.taxId;
@@ -89,8 +88,7 @@ export const authOptions = {
       }
       return token;
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: Record<string, unknown> & { user?: Record<string, unknown> }; token: Record<string, unknown> }) {
       if (session.user && token) {
         session.user.id = token.id;
         session.user.taxId = token.taxId;

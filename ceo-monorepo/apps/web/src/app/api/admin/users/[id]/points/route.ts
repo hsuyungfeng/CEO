@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma, PointTransactionType } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
 import { AdjustPointsSchema, ApiResponse } from '@/types/admin';
 
@@ -191,9 +192,9 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     // 建立查詢條件
-    const where: any = { userId: id };
+    const where: Prisma.PointTransactionWhereInput = { userId: id };
     if (transactionType) {
-      where.type = transactionType;
+      where.type = transactionType as PointTransactionType;
     }
 
     // 查詢點數交易記錄

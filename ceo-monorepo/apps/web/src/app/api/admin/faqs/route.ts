@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
 import { ApiResponse } from '@/types/admin';
 import { faqQuerySchema, faqSchema } from './schema';
@@ -46,8 +47,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 建立查詢條件
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const where: Prisma.FaqWhereInput = {};
 
     // 搜尋條件
     if (search) {

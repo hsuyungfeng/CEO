@@ -81,14 +81,14 @@ export async function PATCH(request: NextRequest) {
       'quietEnabled',
     ]
 
-    const updateData: any = {}
-    
+    const updateData: Record<string, unknown> = {}
+
     for (const field of validFields) {
       if (field in body) {
         if (field === 'preferredChannels') {
           // 驗證渠道是否有效
           const channels = body[field]
-          if (Array.isArray(channels) && channels.every((c: any) => Object.values(NotificationChannel).includes(c))) {
+          if (Array.isArray(channels) && channels.every((c: unknown) => Object.values(NotificationChannel).includes(c as NotificationChannel))) {
             updateData[field] = channels
           }
         } else if (field === 'quietStartHour' || field === 'quietEndHour') {
@@ -104,14 +104,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 確保至少有一個渠道
-    if (updateData.preferredChannels && updateData.preferredChannels.length === 0) {
+    if (updateData.preferredChannels && (updateData.preferredChannels as unknown[]).length === 0) {
       updateData.preferredChannels = [NotificationChannel.IN_APP]
     }
 
     // 更新或創建偏好設定
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateDataForPrisma = updateData as any;
     const preference = await prisma.notificationPreference.upsert({
       where: { userId: authData.user.id },
-      update: updateData,
+      update: updateDataForPrisma,
       create: {
         userId: authData.user.id,
         supplierApplicationEnabled: true,
@@ -126,7 +128,7 @@ export async function PATCH(request: NextRequest) {
         quietStartHour: 22,
         quietEndHour: 8,
         quietEnabled: true,
-        ...updateData,
+        ...updateDataForPrisma,
       },
     })
 

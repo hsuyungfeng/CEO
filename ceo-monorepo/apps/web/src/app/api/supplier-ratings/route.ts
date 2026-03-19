@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { 
-  SupplierRatingCreateSchema, 
+import { Prisma } from '@prisma/client';
+import {
+  SupplierRatingCreateSchema,
   SupplierRatingQuerySchema,
   type SupplierRatingCreateInput,
   type SupplierRatingQuery
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     const skip = (query.page - 1) * query.limit;
 
     // 構建查詢條件
-    const where: any = {};
+    const where: Prisma.SupplierRatingWhereInput = {};
     
     if (query.supplierId) {
       where.supplierId = query.supplierId;
@@ -57,9 +58,10 @@ export async function GET(request: NextRequest) {
     }
     
     if (query.minRating !== undefined || query.maxRating !== undefined) {
-      where.overallScore = {};
-      if (query.minRating !== undefined) where.overallScore.gte = query.minRating;
-      if (query.maxRating !== undefined) where.overallScore.lte = query.maxRating;
+      where.overallScore = {
+        ...(query.minRating !== undefined ? { gte: query.minRating } : {}),
+        ...(query.maxRating !== undefined ? { lte: query.maxRating } : {}),
+      };
     }
     
     if (query.hasComment === true) {

@@ -125,7 +125,15 @@ export async function PATCH(
       'address', 'industry', 'description'
     ];
 
-    const updateData: any = {};
+    const updateData: {
+      companyName?: string;
+      contactPerson?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      industry?: string;
+      description?: string;
+    } = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updateData[field] = body[field];

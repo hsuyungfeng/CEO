@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getAuthData } from '@/lib/auth-helper';
 import { z } from 'zod';
 
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 建立查詢條件
-    const where: any = {
+    const where: Prisma.OrderWhereInput = {
       items: {
         some: {
           productId: {
@@ -99,13 +100,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) {
-        where.createdAt.gte = new Date(startDate);
-      }
-      if (endDate) {
-        where.createdAt.lte = new Date(endDate);
-      }
+      where.createdAt = {
+        ...(startDate ? { gte: new Date(startDate) } : {}),
+        ...(endDate ? { lte: new Date(endDate) } : {}),
+      };
     }
 
     // 並行查詢訂單和統計

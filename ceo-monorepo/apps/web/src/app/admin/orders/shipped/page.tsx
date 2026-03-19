@@ -41,15 +41,15 @@ export default function ShippedOrdersPage() {
       if (result.success && result.data) {
         const ordersData = Array.isArray(result.data) ? result.data : result.data.orders || [];
         const shipped = ordersData
-          .filter((order: any) => order.status === 'shipped')
-          .map((order: any) => ({
-            id: order.id,
-            orderNo: order.orderNo || `ORD-${order.id.substring(0, 8)}`,
-            buyerName: order.buyerName || '未知買家',
-            totalAmount: order.totalAmount || 0,
-            quantity: order.quantity || 0,
-            shippedAt: order.updatedAt || order.createdAt,
-            trackingNo: order.trackingNo || `TRK-${order.id.substring(0, 10).toUpperCase()}`,
+          .filter((order: Record<string, unknown>) => order.status === 'shipped')
+          .map((order: Record<string, unknown>) => ({
+            id: order.id as string,
+            orderNo: (order.orderNo as string) || `ORD-${(order.id as string).substring(0, 8)}`,
+            buyerName: (order.buyerName as string) || '未知買家',
+            totalAmount: (order.totalAmount as number) || 0,
+            quantity: (order.quantity as number) || 0,
+            shippedAt: (order.updatedAt as string) || (order.createdAt as string),
+            trackingNo: (order.trackingNo as string) || `TRK-${(order.id as string).substring(0, 10).toUpperCase()}`,
           }));
         setOrders(shipped);
       } else {

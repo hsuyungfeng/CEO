@@ -160,7 +160,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // 更新商品（使用事務確保數據一致性）
     const updatedProduct = await prisma.$transaction(async (tx) => {
       // 準備更新數據
-      const updateData: any = {};
+      const updateData: {
+        name?: string;
+        subtitle?: string | null;
+        description?: string | null;
+        image?: string | null;
+        unit?: string | null;
+        spec?: string | null;
+        firmId?: string | null;
+        categoryId?: string | null;
+        isFeatured?: boolean;
+        startDate?: Date | null;
+        endDate?: Date | null;
+      } = {};
       
       if (data.name !== undefined) updateData.name = data.name;
       if (data.subtitle !== undefined) updateData.subtitle = data.subtitle;

@@ -87,10 +87,11 @@ export function FaqForm({
         onSuccess();
       } else {
         if (result.errors) {
-          result.errors.forEach((error: any) => {
-            form.setError(error.field as any, {
+          result.errors.forEach((error: unknown) => {
+            const e = error as Record<string, string>;
+            form.setError(e.field as Parameters<typeof form.setError>[0], {
               type: 'manual',
-              message: error.message,
+              message: e.message,
             });
           });
         }

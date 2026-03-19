@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 
 // 廠商列表查詢參數驗證
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     })
 
     // 建立查詢條件
-    const where: any = {}
+    const where: Prisma.FirmWhereInput = {}
     
     if (params.search) {
       where.OR = [

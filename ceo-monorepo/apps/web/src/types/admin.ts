@@ -259,7 +259,7 @@ export interface UserLogData {
   oldValue: string | null;
   newValue: string | null;
   reason: string | null;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
   createdAt: Date;
   admin: {
     id: string;

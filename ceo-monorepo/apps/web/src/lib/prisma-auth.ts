@@ -169,7 +169,7 @@ export async function createOAuthAccount(
     refreshToken?: string;
     expiresAt?: Date;
   }
-): Promise<any> {
+): Promise<unknown> {
   try {
     const oauthAccount = await getPrisma().oAuthAccount.create({
       data: {
@@ -198,7 +198,7 @@ export async function createOAuthAccount(
 export async function findOAuthAccount(
   provider: string,
   providerId: string
-): Promise<{ account: any; user: PrismaUser } | null> {
+): Promise<{ account: { id: string; [key: string]: unknown }; user: PrismaUser } | null> {
   try {
     const account = await getPrisma().oAuthAccount.findUnique({
       where: {
@@ -227,7 +227,7 @@ export async function findOAuthAccount(
 /**
  * Find OAuth accounts by email
  */
-export async function findOAuthAccountsByEmail(email: string): Promise<any[]> {
+export async function findOAuthAccountsByEmail(email: string): Promise<unknown[]> {
   try {
     return await getPrisma().oAuthAccount.findMany({
       where: { email },
@@ -250,7 +250,7 @@ export async function updateOAuthAccount(
     refreshToken?: string;
     expiresAt?: string | Date;
   }
-): Promise<any> {
+): Promise<unknown> {
   try {
     return await getPrisma().oAuthAccount.update({
       where: { id: accountId },
@@ -276,7 +276,7 @@ export async function createTempOAuth(
     refreshToken?: string;
     tokenExpiresAt?: Date;
   }
-): Promise<any> {
+): Promise<{ id: string; [key: string]: unknown }> {
   try {
     const expiresAt = new Date(Date.now() + 3600 * 1000); // 1 hour from now
 
@@ -303,7 +303,7 @@ export async function createTempOAuth(
 /**
  * Find temporary OAuth by ID
  */
-export async function findTempOAuthById(id: string): Promise<any> {
+export async function findTempOAuthById(id: string): Promise<unknown> {
   try {
     return await getPrisma().tempOAuth.findUnique({
       where: { id },

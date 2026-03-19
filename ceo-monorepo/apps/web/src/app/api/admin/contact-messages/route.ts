@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
 import { ApiResponse } from '@/types/admin';
 import { contactMessageQuerySchema } from './schema';
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 構建查詢條件
-    const where: any = {};
+    const where: Prisma.ContactMessageWhereInput = {};
 
     // 搜索條件（姓名、Email、電話、主題、訊息）
     if (search) {
@@ -59,13 +60,10 @@ export async function GET(request: NextRequest) {
 
     // 時間範圍篩選
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) {
-        where.createdAt.gte = new Date(startDate);
-      }
-      if (endDate) {
-        where.createdAt.lte = new Date(endDate);
-      }
+      where.createdAt = {
+        ...(startDate ? { gte: new Date(startDate) } : {}),
+        ...(endDate ? { lte: new Date(endDate) } : {}),
+      };
     }
 
     // 查詢聯絡訊息

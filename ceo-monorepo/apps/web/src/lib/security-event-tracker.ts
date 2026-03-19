@@ -12,7 +12,7 @@ export interface SecurityEventContext {
   ip?: string;
   userAgent?: string;
   endpoint?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export class SecurityEventTracker {
@@ -192,9 +192,9 @@ export class SecurityEventTracker {
   }
 
   /**
-   * Get context from request
+   * 從 Next.js Request 物件取得安全事件上下文
    */
-  static getContextFromRequest(request: any): SecurityEventContext {
+  static getContextFromRequest(request: { headers: { get: (key: string) => string | null }; ip?: string; url?: string }): SecurityEventContext {
     return {
       ip: request.headers?.get('x-forwarded-for') || request.ip || 'unknown',
       userAgent: request.headers?.get('user-agent') || 'unknown',
@@ -203,14 +203,16 @@ export class SecurityEventTracker {
   }
 
   /**
-   * Get context from Express/Node request
+   * 從 Express/Node.js Request 物件取得安全事件上下文
    */
-  static getContextFromExpressRequest(req: any): SecurityEventContext {
+  static getContextFromExpressRequest(req: Record<string, unknown>): SecurityEventContext {
+    const connection = req.connection as Record<string, unknown> | undefined;
+    const get = typeof req.get === 'function' ? (req.get as (key: string) => string | undefined) : undefined;
     return {
-      ip: req.ip || req.connection?.remoteAddress || 'unknown',
-      userAgent: req.get('user-agent') || 'unknown',
-      endpoint: req.originalUrl || req.url || 'unknown',
-      method: req.method || 'unknown',
+      ip: (req.ip as string | undefined) || (connection?.remoteAddress as string | undefined) || 'unknown',
+      userAgent: get?.('user-agent') || 'unknown',
+      endpoint: (req.originalUrl as string | undefined) || (req.url as string | undefined) || 'unknown',
+      method: (req.method as string | undefined) || 'unknown',
     };
   }
 }

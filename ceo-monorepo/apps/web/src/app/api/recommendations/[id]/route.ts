@@ -65,7 +65,7 @@ export async function GET(
     }
     
     // 檢查權限（只能查看自己的推薦或管理員）
-    if (recommendation.userId !== userId && session.user.role !== 'ADMIN') {
+    if (recommendation.userId !== userId && authData.user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: '權限不足' },
         { status: 403 }
@@ -117,7 +117,7 @@ export async function PUT(
       );
     }
     
-    if (existingRecommendation.userId !== userId && session.user.role !== 'ADMIN') {
+    if (existingRecommendation.userId !== userId && authData.user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: '權限不足' },
         { status: 403 }
@@ -142,7 +142,16 @@ export async function PUT(
     
     const { action, note } = validationResult.data;
     
-    let updateData: any = { updatedAt: new Date() };
+    let updateData: {
+      updatedAt: Date;
+      viewed?: boolean;
+      viewedAt?: Date | null;
+      clicked?: boolean;
+      clickedAt?: Date | null;
+      dismissed?: boolean;
+      dismissedAt?: Date | null;
+      note?: string;
+    } = { updatedAt: new Date() };
     
     switch (action) {
       case 'view':
@@ -241,15 +250,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    
-    if (!session || !session.user) {
+    const authData = await getAuthData(request);
+
+    if (!authData) {
       return NextResponse.json(
         { error: '需要登入' },
         { status: 401 }
       );
     }
-    
+
     const recommendationId = id;
     
     // 檢查推薦記錄是否存在

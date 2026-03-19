@@ -37,13 +37,13 @@ export default function PendingOrdersPage() {
         const ordersList = Array.isArray(data) ? data : (data.data || data.orders || []);
 
         // Transform to match Order interface
-        const transformedOrders = ordersList.map((order: any) => ({
-          id: order.id,
-          orderNo: order.orderNo,
-          totalAmount: order.totalAmount,
-          itemCount: order.items?.length || 0,
-          buyer: order.buyer,
-          createdAt: order.createdAt,
+        const transformedOrders = ordersList.map((order: Record<string, unknown>) => ({
+          id: order.id as string,
+          orderNo: order.orderNo as string,
+          totalAmount: order.totalAmount as number,
+          itemCount: (order.items as unknown[] | undefined)?.length || 0,
+          buyer: order.buyer as Record<string, unknown>,
+          createdAt: order.createdAt as string,
         }));
 
         setOrders(transformedOrders);

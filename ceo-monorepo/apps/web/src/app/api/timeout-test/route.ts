@@ -50,20 +50,21 @@ export const POST = async (request: NextRequest) => {
     );
     
     return NextResponse.json(result);
-  } catch (error: any) {
-    if (error.message.includes('API 請求超時')) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '未知錯誤';
+    if (error instanceof Error && message.includes('API 請求超時')) {
       return NextResponse.json({
         success: false,
         error: '請求超時',
         code: 'REQUEST_TIMEOUT',
-        message: error.message,
+        message,
       }, { status: 504 });
     }
-    
+
     return NextResponse.json({
       success: false,
       error: '伺服器錯誤',
-      message: error.message,
+      message,
     }, { status: 500 });
   }
 };
