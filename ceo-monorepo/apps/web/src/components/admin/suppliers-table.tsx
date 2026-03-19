@@ -16,14 +16,16 @@ import VerifySupplierDialog from './verify-supplier-dialog';
 
 interface Supplier {
   id: string;
-  name: string;
+  companyName: string;
   taxId: string;
   email: string;
   phone?: string;
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
   mainAccount?: {
-    accountBalance: number;
-  };
+    id: string;
+    name: string;
+    email: string;
+  } | null;
   createdAt: string;
 }
 
@@ -59,14 +61,14 @@ export default function SuppliersTable({ suppliers, onRefresh }: SuppliersTableP
               <TableHead>聯絡郵件</TableHead>
               <TableHead>聯絡電話</TableHead>
               <TableHead>狀態</TableHead>
-              <TableHead>帳戶餘額</TableHead>
+              <TableHead>主帳號</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {suppliers.map((supplier) => (
               <TableRow key={supplier.id}>
-                <TableCell className="font-medium">{supplier.name}</TableCell>
+                <TableCell className="font-medium">{supplier.companyName}</TableCell>
                 <TableCell>{supplier.taxId}</TableCell>
                 <TableCell>{supplier.email}</TableCell>
                 <TableCell>{supplier.phone || '未提供'}</TableCell>
@@ -75,7 +77,7 @@ export default function SuppliersTable({ suppliers, onRefresh }: SuppliersTableP
                     {statusConfig[supplier.status].label}
                   </Badge>
                 </TableCell>
-                <TableCell>${supplier.mainAccount?.accountBalance || 0}</TableCell>
+                <TableCell>{supplier.mainAccount?.name || '未關聯'}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
                     <Link href={`/admin/suppliers/${supplier.id}`}>

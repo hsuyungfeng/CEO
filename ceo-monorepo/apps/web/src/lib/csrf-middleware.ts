@@ -8,6 +8,11 @@ import { logger } from '@/lib/logger';
  * Validates CSRF tokens on POST, PUT, DELETE, PATCH requests
  */
 export async function validateCSRFToken(request: NextRequest) {
+  // 🔓 開發模式：跳過 CSRF 驗證
+  if (process.env.NODE_ENV === 'development') {
+    return null;
+  }
+
   // Only validate state-changing methods
   const method = request.method.toUpperCase();
   const stateChangingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];

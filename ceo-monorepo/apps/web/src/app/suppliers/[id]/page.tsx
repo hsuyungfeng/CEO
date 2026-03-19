@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Package, Search } from 'lucide-react'
 
 interface Supplier {
   id: string
@@ -26,12 +28,28 @@ interface Supplier {
   approvedUsersCount: number
 }
 
+interface Product {
+  id: string
+  name: string
+  subtitle: string | null
+  image: string | null
+  unit: string | null
+  spec: string | null
+  category: string | null
+  priceTiers: Array<{ minQty: number; price: number }>
+  totalSold: number
+}
+
 export default function SupplierDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const [supplier, setSupplier] = useState<Supplier | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
+  const [productSearch, setProductSearch] = useState('')
+  const [productTotal, setProductTotal] = useState(0)
 
   const supplierId = params.id as string
 
@@ -47,6 +65,7 @@ export default function SupplierDetailPage() {
       const data = await res.json()
       if (data.success) {
         setSupplier(data.data)
+        fetchProducts('')
       } else {
         setError(data.error || '載入失敗')
       }
@@ -55,6 +74,31 @@ export default function SupplierDetailPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchProducts(search: string) {
+    setProductsLoading(true)
+    try {
+      const params = new URLSearchParams({ limit: '20' })
+      if (search.trim()) params.set('search', search.trim())
+      const res = await fetch(`/api/suppliers/${supplierId}/products?${params}`)
+      const data = await res.json()
+      if (data.success) {
+        setProducts(data.data)
+        setProductTotal(data.meta.total)
+      }
+    } catch {
+      // 靜默失敗，保持空列表
+    } finally {
+      setProductsLoading(false)
+    }
+  }
+
+  function handleProductSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    setProductSearch(value)
+    const timer = setTimeout(() => fetchProducts(value), 300)
+    return () => clearTimeout(timer)
   }
 
   if (loading) {
@@ -116,7 +160,7 @@ export default function SupplierDetailPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium text-gray-500 text-sm">公司描述</h3>
-                    <p className="mt-1">{supplier.description || '暂无描述'}</p>
+                    <p className="mt-1">{supplier.description || '尚無描述'}</p>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -180,15 +224,92 @@ export default function SupplierDetailPage() {
               </CardContent>
             </Card>
 
-            <div className="space-y-2">
-              <Link href={`/suppliers/${supplier.id}/apply`} className="block">
-                <Button className="w-full">申請加入</Button>
-              </Link>
-              <Button variant="outline" className="w-full" onClick={() => router.back()}>
-                返回
-              </Button>
-            </div>
           </div>
+        </div>
+
+        {/* 商品列表 */}
+        <div className="mt-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-green-600" />
+                  供應商商品
+                  {productTotal > 0 && (
+                    <Badge variant="secondary">{productTotal} 件</Badge>
+                  )}
+                </CardTitle>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    value={productSearch}
+                    onChange={handleProductSearch}
+                    placeholder="搜尋商品名稱..."
+                    className="pl-9 h-9 text-sm"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {productsLoading ? (
+                <div className="flex justify-center py-10 text-gray-400">
+                  <svg className="animate-spin w-5 h-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  載入中...
+                </div>
+              ) : products.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                  <Package className="w-10 h-10 mb-2 text-gray-300" />
+                  <p className="text-sm">{productSearch ? '找不到符合的商品' : '此供應商尚無商品'}</p>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {products.map((product) => {
+                    const startingPrice = product.priceTiers?.[0]?.price ?? null
+                    return (
+                      <div
+                        key={product.id}
+                        className="rounded-lg border border-gray-200 bg-white p-3 hover:shadow-md transition-shadow"
+                      >
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-32 object-cover rounded mb-2"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-gray-100 rounded mb-2 flex items-center justify-center text-gray-300">
+                            <Package className="w-8 h-8" />
+                          </div>
+                        )}
+                        <p className="font-medium text-gray-900 text-sm truncate">{product.name}</p>
+                        {product.subtitle && (
+                          <p className="text-xs text-gray-500 truncate mt-0.5">{product.subtitle}</p>
+                        )}
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {product.category && (
+                            <Badge variant="outline" className="text-xs px-1.5 py-0">{product.category}</Badge>
+                          )}
+                          {product.unit && (
+                            <span className="text-xs text-gray-400">{product.unit}</span>
+                          )}
+                        </div>
+                        {startingPrice !== null ? (
+                          <p className="mt-2 text-sm font-semibold text-blue-700">
+                            NT$ {startingPrice.toLocaleString('zh-TW')} 起
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-xs text-gray-400">價格洽談</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

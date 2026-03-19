@@ -29,10 +29,12 @@ interface GroupsTableProps {
   onRefresh: () => void;
 }
 
-const statusConfig = {
-  ACTIVE: { label: '進行中', variant: 'secondary' as const },
-  COMPLETED: { label: '已完成', variant: 'success' as const },
-  CANCELLED: { label: '已取消', variant: 'destructive' as const },
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  PENDING:   { label: '待確認', variant: 'secondary' },
+  CONFIRMED: { label: '進行中', variant: 'default' },
+  SHIPPED:   { label: '已出貨', variant: 'outline' },
+  COMPLETED: { label: '已完成', variant: 'outline' },
+  CANCELLED: { label: '已取消', variant: 'destructive' },
 };
 
 export default function GroupsTable({ groups, onRefresh }: GroupsTableProps) {
@@ -67,8 +69,8 @@ export default function GroupsTable({ groups, onRefresh }: GroupsTableProps) {
                 <TableCell>${group.totalAmount}</TableCell>
                 <TableCell>{group.discountPercentage}%</TableCell>
                 <TableCell>
-                  <Badge variant={statusConfig[group.status].variant}>
-                    {statusConfig[group.status].label}
+                  <Badge variant={(statusConfig[group.status] ?? statusConfig.PENDING).variant}>
+                    {(statusConfig[group.status] ?? { label: group.status }).label}
                   </Badge>
                 </TableCell>
                 <TableCell>{new Date(group.createdAt).toLocaleDateString('zh-TW')}</TableCell>

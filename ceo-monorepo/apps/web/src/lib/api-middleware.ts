@@ -221,10 +221,12 @@ export function withAuth(options: AuthOptions = {}) {
       context: { params?: Record<string, string> } = {}
     ): Promise<NextResponse> {
       try {
-        // 🔓 測試模式：使用假的管理員認證數據
-        const TEST_MODE = process.env.NODE_ENV === 'development' && true;
-        if (TEST_MODE && !await getAuthData(request)) {
+        // 🔓 測試模式：直接以管理員身份通過所有驗證
+        const TEST_MODE = process.env.NODE_ENV === 'development';
+        if (TEST_MODE) {
           const fakeAuthData = {
+            id: 'test-admin-id',
+            userId: 'test-admin-id',
             user: {
               id: 'test-admin-id',
               email: 'test@admin.com',

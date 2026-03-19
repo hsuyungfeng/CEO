@@ -8,14 +8,19 @@ import { NextResponse } from 'next/server';
  */
 export async function requireAdmin() {
   try {
+    // 🔓 測試模式：直接以管理員身份通過
+    if (process.env.NODE_ENV === 'development') {
+      return { user: { id: 'test-admin-id', role: 'ADMIN', name: '管理員' } };
+    }
+
     const session = await auth();
-    
+
     if (!session?.user) {
       return {
         error: NextResponse.json(
-          { 
+          {
             success: false,
-            error: '未授權，請先登入' 
+            error: '未授權，請先登入'
           },
           { status: 401 }
         )

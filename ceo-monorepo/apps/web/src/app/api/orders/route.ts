@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
     
     // 解析和驗證查詢參數
     const queryParams = {
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
+      page: searchParams.get('page') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
       status: searchParams.get('status') || undefined,
     };
 

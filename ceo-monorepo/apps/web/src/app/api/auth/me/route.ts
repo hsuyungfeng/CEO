@@ -43,6 +43,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 🔓 開發模式：直接返回 test user，不查 DB（test-admin-id 不在 DB 中）
+    if (process.env.NODE_ENV === 'development' && authData.user.id === 'test-admin-id') {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: 'test-admin-id',
+          email: 'test@admin.com',
+          name: '管理員',
+          taxId: '88888888',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        }
+      });
+    }
+
     // 取得使用者資料（authData 已經包含使用者，但我們需要最新的資料）
     const user = await prisma.user.findUnique({
       where: { id: authData.user.id },

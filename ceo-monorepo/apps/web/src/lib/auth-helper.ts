@@ -146,6 +146,22 @@ async function validateSession() {
  * @returns User data or null if authentication fails
  */
 export async function getAuthData(request: NextRequest) {
+  // 🔓 測試模式：直接以管理員身份通過（與 admin-auth.ts 保持一致）
+  if (process.env.NODE_ENV === 'development') {
+    return {
+      id: 'test-admin-id',
+      userId: 'test-admin-id',
+      user: {
+        id: 'test-admin-id',
+        email: 'test@admin.com',
+        name: '管理員',
+        taxId: '88888888',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    };
+  }
+
   // Try Bearer Token first (for Mobile App)
   const bearerTokenData = await validateBearerToken(request);
   

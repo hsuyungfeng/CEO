@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,26 @@ function SignInContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 🔓 開發模式：自動以測試管理員登入
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      setLoading(true);
+      signIn('credentials', {
+        taxId: '88888888',
+        password: 'test',
+        redirect: false,
+        callbackUrl: callbackUrl || '/',
+      }).then((result) => {
+        if (result?.ok) {
+          router.push(callbackUrl || '/');
+          router.refresh();
+        } else {
+          setLoading(false);
+        }
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

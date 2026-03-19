@@ -20,7 +20,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<GroupBuy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('ACTIVE');
+  const [statusFilter, setStatusFilter] = useState<string>('');
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -89,7 +89,9 @@ export default function GroupsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border rounded-md"
           >
-            <option value="ACTIVE">進行中</option>
+            <option value="">全部</option>
+            <option value="PENDING">待確認</option>
+            <option value="CONFIRMED">進行中</option>
             <option value="COMPLETED">已完成</option>
             <option value="CANCELLED">已取消</option>
           </select>

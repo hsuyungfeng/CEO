@@ -94,10 +94,10 @@ export const GET = withOptionalAuth(async (request, { authData }) => {
     
     // 驗證查詢參數
     const queryResult = GetSuppliersQuerySchema.safeParse({
-      status: searchParams.get('status'),
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      search: searchParams.get('search'),
+      status: searchParams.get('status') ?? undefined,
+      page: searchParams.get('page') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
+      search: searchParams.get('search') ?? undefined,
     });
 
     if (!queryResult.success) {

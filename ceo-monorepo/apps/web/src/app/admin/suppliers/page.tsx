@@ -5,17 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import SuppliersTable from '@/components/admin/suppliers-table';
+import CreateSupplierDialog from '@/components/admin/create-supplier-dialog';
 
 interface Supplier {
   id: string;
-  name: string;
+  companyName: string;
   taxId: string;
   email: string;
   phone?: string;
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
   mainAccount?: {
-    accountBalance: number;
-  };
+    id: string;
+    name: string;
+    email: string;
+  } | null;
   createdAt: string;
 }
 
@@ -25,13 +28,14 @@ export default function SuppliersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
         setLoading(true);
         const url = new URL('/api/suppliers', window.location.origin);
-        if (statusFilter) url.searchParams.append('status', statusFilter);
+        if (statusFilter && statusFilter !== '') url.searchParams.append('status', statusFilter);
 
         const response = await fetch(url.toString());
         if (!response.ok) {
@@ -55,7 +59,7 @@ export default function SuppliersPage() {
   }, [statusFilter]);
 
   const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (supplier.companyName ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.taxId.includes(searchTerm)
   );
 
@@ -86,7 +90,10 @@ export default function SuppliersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">供應商管理</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">供應商管理</h1>
+        <Button onClick={() => setIsCreateOpen(true)}>+ 新增供應商</Button>
+      </div>
 
       <Card>
         <CardHeader>
@@ -116,6 +123,15 @@ export default function SuppliersPage() {
       </Card>
 
       <SuppliersTable suppliers={filteredSuppliers} onRefresh={() => window.location.reload()} />
+
+      <CreateSupplierDialog
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => {
+          setIsCreateOpen(false);
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

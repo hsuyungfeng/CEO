@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-auth';
 import { UserQuerySchema, ApiResponse } from '@/types/admin';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+
+const createMemberSchema = z.object({
+  taxId: z.string().length(8, '統一編號必須是8位數字').regex(/^\d+$/, '統一編號必須是數字'),
+  name: z.string().min(1, '公司名稱不能為空'),
+  email: z.string().email('Email 格式不正確'),
+  password: z.string().min(6, '密碼至少6位'),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  contactPerson: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -132,5 +144,72 @@ export async function GET(request: NextRequest) {
       } as ApiResponse,
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminCheck = await requireAdmin();
+    if ('error' in adminCheck) return adminCheck.error;
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ success: false, error: '無效的請求格式' }, { status: 400 });
+    }
+
+    const validation = createMemberSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: '資料驗證失敗', errors: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { taxId, name, email, password, phone, address, contactPerson } = validation.data;
+
+    // 檢查重複
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ taxId }, { email }] },
+    });
+    if (existing) {
+      const field = existing.taxId === taxId ? '統一編號' : 'Email';
+      return NextResponse.json({ success: false, error: `${field} 已存在` }, { status: 409 });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await prisma.user.create({
+      data: {
+        taxId,
+        name,
+        email,
+        password: hashedPassword,
+        phone: phone || null,
+        address: address || null,
+        contactPerson: contactPerson || null,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        emailVerified: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: user.id,
+        taxId: user.taxId,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        createdAt: user.createdAt,
+      },
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('新增企業會員錯誤:', error);
+    return NextResponse.json({ success: false, error: '伺服器錯誤，請稍後再試' }, { status: 500 });
   }
 }

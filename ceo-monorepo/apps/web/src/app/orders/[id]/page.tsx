@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,13 @@ import { ArrowLeft } from 'lucide-react';
 
 interface OrderItem {
   id: string;
-  name: string;
+  productName: string;
   quantity: number;
-  price: number;
-  image?: string;
-  unit?: string;
+  unitPrice: number;
+  subtotal: number;
+  productImage?: string;
+  productUnit?: string;
+  productSpec?: string;
 }
 
 interface Order {
@@ -30,36 +32,45 @@ interface Order {
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSuccess = searchParams.get('success') === '1';
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
         setLoading(true);
         const response = await fetch(`/api/orders/${params.id}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch order: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`載入訂單失敗: ${response.status}`);
         const data = await response.json();
-        console.log('[OrderDetailPage] Fetched order:', data);
-
-        // Handle both direct object and wrapper response formats
         const orderData = data.data || data.order || data;
         setOrder(orderData);
       } catch (err) {
-        console.error('[OrderDetailPage] Error fetching order:', err);
         setError(err instanceof Error ? err.message : '無法載入訂單');
       } finally {
         setLoading(false);
       }
     };
-
     fetchOrder();
   }, [params.id]);
+
+  const cancelOrder = async () => {
+    if (!confirm('確定要取消此訂單嗎？')) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/orders/${params.id}`, { method: 'PATCH' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取消失敗');
+      setOrder(prev => prev ? { ...prev, status: 'CANCELLED' } : prev);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '取消訂單失敗');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -145,6 +156,12 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           返回訂單列表
         </Button>
 
+        {isSuccess && (
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
+            ✅ 訂單已成功送出！我們將盡快確認您的訂單。
+          </div>
+        )}
+
         <Card className="mb-6">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -189,23 +206,23 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               {order.items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between pb-4 border-b">
                   <div className="flex items-center">
-                    {item.image && (
+                    {item.productImage && (
                       <div className="w-16 h-16 bg-gray-200 mr-4">
                         <img
-                          src={item.image}
-                          alt={item.name}
+                          src={item.productImage}
+                          alt={item.productName}
                           className="w-full h-full object-contain"
                         />
                       </div>
                     )}
                     <div>
-                      <h4 className="font-medium">{item.name}</h4>
-                      <p className="text-sm text-gray-600">{item.quantity} {item.unit || '個'}</p>
+                      <h4 className="font-medium">{item.productName}</h4>
+                      <p className="text-sm text-gray-600">{item.quantity} {item.productUnit || '個'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${item.price}/{item.unit || '個'}</p>
-                    <p className="text-sm text-gray-600">${item.price * item.quantity}</p>
+                    <p className="font-medium">NT${Number(item.unitPrice).toLocaleString('zh-TW')}/{item.productUnit || '個'}</p>
+                    <p className="text-sm text-gray-600">NT${Number(item.subtotal).toLocaleString('zh-TW')}</p>
                   </div>
                 </div>
               ))}
@@ -215,15 +232,27 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
         <Card>
           <CardContent className="pt-6">
-            <div className="flex justify-end">
+            <div className="flex justify-between items-end">
+              <div>
+                {order.status === 'PENDING' && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={cancelling}
+                    onClick={cancelOrder}
+                  >
+                    {cancelling ? '取消中...' : '取消訂單'}
+                  </Button>
+                )}
+              </div>
               <div className="w-full md:w-1/3">
                 <div className="flex justify-between py-2">
                   <span>小計</span>
-                  <span>${order.totalAmount}</span>
+                  <span>NT${Number(order.totalAmount).toLocaleString('zh-TW')}</span>
                 </div>
                 <div className="flex justify-between py-2 border-t font-bold text-lg">
                   <span>總計</span>
-                  <span>${order.totalAmount}</span>
+                  <span>NT${Number(order.totalAmount).toLocaleString('zh-TW')}</span>
                 </div>
               </div>
             </div>

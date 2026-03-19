@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 
 interface OrderItem {
   id: string;
-  name: string;
+  productName: string;
   quantity: number;
-  price: number;
-  image?: string;
+  unitPrice: number;
+  subtotal: number;
+  productImage?: string;
+  productUnit?: string;
 }
 
 interface Order {
@@ -28,6 +30,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -55,6 +58,21 @@ export default function OrdersPage() {
 
     fetchOrders();
   }, []);
+
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm('確定要取消此訂單嗎？')) return;
+    setCancellingId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: 'PATCH' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取消失敗');
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '取消訂單失敗');
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -150,19 +168,19 @@ export default function OrdersPage() {
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
                         <div className="flex items-center">
-                          {item.image && (
+                          {item.productImage && (
                             <div className="w-12 h-12 bg-gray-200 mr-3">
                               <img
-                                src={item.image}
-                                alt={item.name}
+                                src={item.productImage}
+                                alt={item.productName}
                                 className="w-full h-full object-contain"
                               />
                             </div>
                           )}
-                          <span>{item.name}</span>
+                          <span>{item.productName}</span>
                         </div>
                         <div className="text-right">
-                          <p>{item.quantity} x ${item.price} = ${item.quantity * item.price}</p>
+                          <p>{item.quantity} x NT${Number(item.unitPrice).toLocaleString('zh-TW')} = NT${Number(item.subtotal).toLocaleString('zh-TW')}</p>
                         </div>
                       </div>
                     ))}
@@ -170,7 +188,7 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="flex justify-between items-center pt-4 border-t">
-                  <p className="text-lg font-semibold">總計: ${order.totalAmount}</p>
+                  <p className="text-lg font-semibold">總計: NT${Number(order.totalAmount).toLocaleString('zh-TW')}</p>
                   <div className="flex space-x-2">
                     <Button
                       variant="outline"
@@ -183,8 +201,10 @@ export default function OrdersPage() {
                       <Button
                         variant="destructive"
                         size="sm"
+                        disabled={cancellingId === order.id}
+                        onClick={() => cancelOrder(order.id)}
                       >
-                        取消訂單
+                        {cancellingId === order.id ? '取消中...' : '取消訂單'}
                       </Button>
                     )}
                   </div>

@@ -91,19 +91,21 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (isSubmitting) return;
-    
     setIsSubmitting(true);
     try {
-      // Process order
-      const orderId = new Date().getTime();
-      // 這裡應該呼叫訂單 API
-      // await fetch('/api/orders', { method: 'POST', body: JSON.stringify({...}) });
-      
-      console.log(`訂單已送出！訂單編號：${orderId}`);
-      router.push('/orders');
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: orderNote || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || '訂單提交失敗');
+      }
+      router.push(`/orders/${data.order.id}?success=1`);
     } catch (error) {
       console.error('訂單提交失敗:', error);
-      alert('訂單提交失敗，請稍後再試');
+      alert(error instanceof Error ? error.message : '訂單提交失敗，請稍後再試');
       setIsSubmitting(false);
     }
   };

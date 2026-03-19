@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye, Mail, Phone, MapPin, Search, Filter, ChevronLeft, ChevronRight, User, Calendar } from 'lucide-react'
+import { Eye, Mail, Phone, MapPin, Search, Filter, ChevronLeft, ChevronRight, User, Calendar, Plus } from 'lucide-react'
 import Link from 'next/link'
+import CreateMemberDialog from '@/components/admin/create-member-dialog'
 import {
   Table,
   TableBody,
@@ -59,6 +60,7 @@ export default function MembersPage() {
   const [status, setStatus] = useState<string>('all')
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -136,10 +138,22 @@ export default function MembersPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">會員管理</h1>
-        <p className="mt-2 text-gray-600">管理所有企業會員</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">會員管理</h1>
+          <p className="mt-2 text-gray-600">管理所有企業會員</p>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          新增企業會員
+        </Button>
       </div>
+
+      <CreateMemberDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSuccess={() => fetchMembers()}
+      />
 
       {/* 搜尋和篩選 */}
       <Card className="mb-6">

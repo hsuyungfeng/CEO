@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,34 @@ import { Separator } from '@/components/ui/separator';
 import { FcGoogle } from 'react-icons/fc';
 import { AppleIcon } from '@/components/ui/apple-icon';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const [taxId, setTaxId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 🔓 開發模式：自動以測試管理員登入
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      setLoading(true);
+      signIn('credentials', {
+        taxId: '88888888',
+        password: 'test',
+        redirect: false,
+        callbackUrl,
+      }).then((result) => {
+        if (result?.ok) {
+          router.push(callbackUrl);
+          router.refresh();
+        } else {
+          setLoading(false);
+        }
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,5 +224,17 @@ export default function LoginPage() {
         </Card>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-600">載入中...</p>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
