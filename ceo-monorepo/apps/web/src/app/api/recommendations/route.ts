@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { getAuthData } from '@/lib/auth-helper';
 import { z } from 'zod';
 
 // GET /api/recommendations - 獲取當前用戶的採購推薦
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    
-    if (!session || !session.user) {
+    const authData = await getAuthData(request);
+
+    if (!authData) {
       return NextResponse.json(
         { error: '需要登入才能獲取推薦' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = authData.userId;
     
     // 獲取查詢參數
     const { searchParams } = new URL(request.url);
@@ -89,10 +89,9 @@ export async function GET(request: NextRequest) {
 // POST /api/recommendations - 創建新的推薦（管理員/系統用）
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    
-    // 只有管理員可以手動創建推薦
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const authData = await getAuthData(request);
+
+    if (!authData || authData.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { error: '權限不足' },
         { status: 403 }

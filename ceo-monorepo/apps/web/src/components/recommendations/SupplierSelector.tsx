@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Search, X, CheckCircle, Package, ExternalLink } from 'lucide-react';
+import { Star, Search, X, CheckCircle, Package, ExternalLink, ShoppingCart, Sparkles } from 'lucide-react';
 
 // ==================== 型別定義 ====================
 
@@ -34,6 +34,28 @@ interface Product {
   priceTiers: Array<{
     price: number | string;
   }>;
+}
+
+interface Recommendation {
+  id: string;
+  score: number;
+  reason: string | null;
+  algorithm: string;
+  product: {
+    id: string;
+    name: string;
+    subtitle: string | null;
+    image: string | null;
+    unit: string | null;
+    popularityScore: number;
+    purchaseCount: number;
+    priceTiers: Array<{ price: number | string }>;
+  };
+  supplier: {
+    id: string;
+    companyName: string;
+    avgRating: number;
+  } | null;
 }
 
 interface Props {
@@ -82,6 +104,53 @@ function StarRating({ rating }: { rating: number | null }) {
       ))}
       <span className="ml-1 text-xs text-gray-500">{score.toFixed(1)}</span>
     </span>
+  );
+}
+
+// ==================== 加入購物車按鈕 ====================
+
+function AddToCartButton({ productId }: { productId: string }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (status === 'loading') return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: 1 }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || '加入失敗');
+      }
+      setStatus('success');
+      setTimeout(() => setStatus('idle'), 2000);
+    } catch {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 2000);
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant={status === 'success' ? 'default' : 'outline'}
+      className={`mt-2 w-full gap-1.5 text-xs h-7 ${
+        status === 'success'
+          ? 'bg-green-600 hover:bg-green-600 text-white border-green-600'
+          : status === 'error'
+          ? 'border-red-400 text-red-600'
+          : 'text-blue-600 hover:bg-blue-50 hover:border-blue-400'
+      }`}
+      onClick={handleAddToCart}
+      disabled={status === 'loading'}
+    >
+      <ShoppingCart className="w-3 h-3" />
+      {status === 'loading' ? '加入中...' : status === 'success' ? '已加入！' : status === 'error' ? '加入失敗' : '加入購物車'}
+    </Button>
   );
 }
 
@@ -151,11 +220,78 @@ function SupplierCard({ supplier, isFav, onToggleFav, showViewLink = false }: Su
   );
 }
 
+// ==================== 推薦商品卡片 ====================
+
+function RecommendationCard({ rec }: { rec: Recommendation }) {
+  const startingPrice =
+    rec.product.priceTiers?.length > 0
+      ? parseFloat(String(rec.product.priceTiers[0].price))
+      : null;
+
+  const algorithmLabel: Record<string, string> = {
+    COLLABORATIVE: '協同過濾',
+    CONTENT_BASED: '內容推薦',
+    TRENDING: '熱門商品',
+    MANUAL: '編輯推薦',
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+      {rec.product.image ? (
+        <img
+          src={rec.product.image}
+          alt={rec.product.name}
+          className="w-full h-28 object-cover rounded mb-2"
+        />
+      ) : (
+        <div className="w-full h-28 bg-gray-100 rounded mb-2 flex items-center justify-center">
+          <Package className="w-8 h-8 text-gray-300" />
+        </div>
+      )}
+      <div className="flex-1">
+        <p className="font-medium text-gray-900 text-sm truncate">{rec.product.name}</p>
+        {rec.product.subtitle && (
+          <p className="text-xs text-gray-500 truncate mt-0.5">{rec.product.subtitle}</p>
+        )}
+        {rec.supplier && (
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{rec.supplier.companyName}</p>
+        )}
+        <div className="mt-1 flex items-center gap-1 flex-wrap">
+          {algorithmLabel[rec.algorithm] && (
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
+              {algorithmLabel[rec.algorithm]}
+            </Badge>
+          )}
+          <span className="text-xs text-amber-600">
+            匹配度 {Math.round(rec.score * 100)}%
+          </span>
+        </div>
+        {startingPrice !== null ? (
+          <p className="mt-1 text-sm font-semibold text-blue-700">
+            NT$ {startingPrice.toLocaleString('zh-TW')} 起
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-gray-400">價格洽談</p>
+        )}
+        {rec.reason && (
+          <p className="mt-1 text-xs text-gray-500 line-clamp-2">{rec.reason}</p>
+        )}
+      </div>
+      <AddToCartButton productId={rec.product.id} />
+    </div>
+  );
+}
+
 // ==================== 主元件 ====================
 
 export default function SupplierSelector({ userId: _userId }: Props) {
   // --- 常用供應商狀態 ---
   const [favorites, setFavorites] = useState<Supplier[]>([]);
+
+  // --- 推薦商品狀態 ---
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recsLoading, setRecsLoading] = useState(true);
+  const [recsError, setRecsError] = useState<string | null>(null);
 
   // --- 搜尋供應商狀態 ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,10 +308,31 @@ export default function SupplierSelector({ userId: _userId }: Props) {
   const [productError, setProductError] = useState<string | null>(null);
   const [hasSearchedProducts, setHasSearchedProducts] = useState(false);
 
-  // ==================== 初始化：從 localStorage 載入 ====================
+  // ==================== 初始化 ====================
 
   useEffect(() => {
     setFavorites(loadFavorites());
+  }, []);
+
+  // 載入個人化推薦
+  useEffect(() => {
+    const fetchRecs = async () => {
+      setRecsLoading(true);
+      setRecsError(null);
+      try {
+        const res = await fetch('/api/recommendations?limit=12');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setRecommendations(json.data as Recommendation[]);
+        }
+      } catch {
+        setRecsError('無法載入推薦，請稍後再試');
+      } finally {
+        setRecsLoading(false);
+      }
+    };
+    fetchRecs();
   }, []);
 
   // ==================== 常用供應商操作 ====================
@@ -185,7 +342,6 @@ export default function SupplierSelector({ userId: _userId }: Props) {
       let updated: Supplier[];
       if (isFavorite(prev, supplier.id)) {
         updated = prev.filter((s) => s.id !== supplier.id);
-        // 同步移除相似商品搜尋的選取
         setSelectedTargetIds((ids) => ids.filter((id) => id !== supplier.id));
       } else {
         updated = [...prev, supplier];
@@ -214,8 +370,7 @@ export default function SupplierSelector({ userId: _userId }: Props) {
       } else {
         setSearchResults([]);
       }
-    } catch (err) {
-      console.error('搜尋供應商失敗:', err);
+    } catch {
       setSearchError('搜尋供應商時發生錯誤，請稍後再試。');
       setSearchResults([]);
     } finally {
@@ -223,12 +378,10 @@ export default function SupplierSelector({ userId: _userId }: Props) {
     }
   }, []);
 
-  // 初始化時載入供應商列表（空搜尋）
   useEffect(() => {
     fetchSuppliers('');
   }, [fetchSuppliers]);
 
-  // debounce 搜尋
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -238,7 +391,6 @@ export default function SupplierSelector({ userId: _userId }: Props) {
     }, 300);
   };
 
-  // 清除計時器
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -266,7 +418,7 @@ export default function SupplierSelector({ userId: _userId }: Props) {
       const targets =
         selectedTargetIds.length > 0
           ? selectedTargetIds
-          : [undefined]; // 不指定供應商時搜尋全平台
+          : [undefined];
 
       await Promise.all(
         targets.map(async (supplierId) => {
@@ -288,7 +440,6 @@ export default function SupplierSelector({ userId: _userId }: Props) {
         })
       );
 
-      // 去重（同一商品可能因多個供應商搜尋被重複加入）
       const seen = new Set<string>();
       const unique = results.filter((p) => {
         if (seen.has(p.id)) return false;
@@ -297,8 +448,7 @@ export default function SupplierSelector({ userId: _userId }: Props) {
       });
 
       setProductResults(unique);
-    } catch (err) {
-      console.error('搜尋商品失敗:', err);
+    } catch {
       setProductError('搜尋商品時發生錯誤，請稍後再試。');
       setProductResults([]);
     } finally {
@@ -316,6 +466,47 @@ export default function SupplierSelector({ userId: _userId }: Props) {
 
   return (
     <div className="space-y-6">
+
+      {/* ===== 區塊零：個人化推薦 ===== */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+            為您推薦
+            {recommendations.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{recommendations.length} 項</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recsLoading ? (
+            <div className="flex items-center justify-center py-10 text-gray-400">
+              <svg className="animate-spin w-5 h-5 mr-2 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span className="text-sm">載入推薦中⋯</span>
+            </div>
+          ) : recsError ? (
+            <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              {recsError}
+            </div>
+          ) : recommendations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+              <Sparkles className="w-10 h-10 mb-2 text-gray-300" />
+              <p className="text-sm">暫無個人化推薦</p>
+              <p className="text-xs mt-1">完成更多採購後，系統將為您生成推薦</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {recommendations.map((rec) => (
+                <RecommendationCard key={rec.id} rec={rec} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* ===== 區塊一：常用供應商 ===== */}
       <Card>
         <CardHeader className="pb-3">
@@ -343,7 +534,6 @@ export default function SupplierSelector({ userId: _userId }: Props) {
                     onToggleFav={handleToggleFav}
                     showViewLink={true}
                   />
-                  {/* 移除按鈕（X 圖示，快捷入口） */}
                   <button
                     className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500 flex items-center justify-center transition-colors"
                     onClick={() => handleToggleFav(supplier)}
@@ -391,28 +581,11 @@ export default function SupplierSelector({ userId: _userId }: Props) {
             )}
           </div>
 
-          {/* 搜尋狀態 */}
           {isSearching && (
             <div className="flex items-center justify-center py-8 text-gray-400">
-              <svg
-                className="animate-spin w-5 h-5 mr-2 text-blue-500"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
+              <svg className="animate-spin w-5 h-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               <span className="text-sm">搜尋中⋯</span>
             </div>
@@ -455,7 +628,6 @@ export default function SupplierSelector({ userId: _userId }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* 商品關鍵字輸入 */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
               商品關鍵字
@@ -477,38 +649,11 @@ export default function SupplierSelector({ userId: _userId }: Props) {
                 disabled={!productKeyword.trim() || isSearchingProducts}
                 className="shrink-0"
               >
-                {isSearchingProducts ? (
-                  <span className="flex items-center gap-1.5">
-                    <svg
-                      className="animate-spin w-4 h-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    搜尋中⋯
-                  </span>
-                ) : (
-                  '搜尋相似商品'
-                )}
+                {isSearchingProducts ? '搜尋中⋯' : '搜尋相似商品'}
               </Button>
             </div>
           </div>
 
-          {/* 目標供應商選取（從常用列表） */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
               指定供應商（選填）
@@ -546,7 +691,6 @@ export default function SupplierSelector({ userId: _userId }: Props) {
             )}
           </div>
 
-          {/* 搜尋結果 */}
           {productError && (
             <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
               {productError}
@@ -574,17 +718,15 @@ export default function SupplierSelector({ userId: _userId }: Props) {
                     {productResults.map((product) => {
                       const startingPrice =
                         product.priceTiers && product.priceTiers.length > 0
-                          ? parseFloat(
-                              String(product.priceTiers[0].price)
-                            )
+                          ? parseFloat(String(product.priceTiers[0].price))
                           : null;
 
                       return (
                         <div
                           key={product.id}
-                          className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md transition-shadow"
+                          className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col"
                         >
-                          <div className="flex items-start gap-2">
+                          <div className="flex items-start gap-2 flex-1">
                             <Package className="w-4 h-4 mt-0.5 shrink-0 text-green-500" />
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-gray-900 truncate text-sm">
@@ -595,12 +737,7 @@ export default function SupplierSelector({ userId: _userId }: Props) {
                               </p>
                               {startingPrice !== null ? (
                                 <p className="mt-1 text-sm font-semibold text-blue-700">
-                                  NT${' '}
-                                  {startingPrice.toLocaleString('zh-TW', {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 2,
-                                  })}{' '}
-                                  起
+                                  NT$ {startingPrice.toLocaleString('zh-TW')} 起
                                 </p>
                               ) : (
                                 <p className="mt-1 text-xs text-gray-400">
@@ -609,6 +746,7 @@ export default function SupplierSelector({ userId: _userId }: Props) {
                               )}
                             </div>
                           </div>
+                          <AddToCartButton productId={product.id} />
                         </div>
                       );
                     })}

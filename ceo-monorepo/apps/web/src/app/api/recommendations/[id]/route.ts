@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { getAuthData } from '@/lib/auth-helper';
 import { z } from 'zod';
 
 // GET /api/recommendations/[id] - 獲取單個推薦詳情
@@ -10,17 +10,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    
-    if (!session || !session.user) {
+    const authData = await getAuthData(request);
+
+    if (!authData) {
       return NextResponse.json(
         { error: '需要登入' },
         { status: 401 }
       );
     }
-    
+
     const recommendationId = id;
-    const userId = session.user.id;
+    const userId = authData.userId;
     
     const recommendation = await prisma.purchaseRecommendation.findUnique({
       where: { id: recommendationId },
@@ -93,17 +93,17 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    
-    if (!session || !session.user) {
+    const authData = await getAuthData(request);
+
+    if (!authData) {
       return NextResponse.json(
         { error: '需要登入' },
         { status: 401 }
       );
     }
-    
+
     const recommendationId = id;
-    const userId = session.user.id;
+    const userId = authData.userId;
     
     // 檢查推薦記錄是否存在且屬於當前用戶
     const existingRecommendation = await prisma.purchaseRecommendation.findUnique({
