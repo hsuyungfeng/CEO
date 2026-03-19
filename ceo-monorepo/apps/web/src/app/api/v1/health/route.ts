@@ -8,15 +8,15 @@
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { 
-  withOptionalAuth, 
-  withAuth,
-  createSuccessResponse, 
+import {
+  withOptionalAuth,
+  withAdminAuth,
+  createSuccessResponse,
   createErrorResponse,
   ErrorCode
 } from '@/lib/api-middleware';
-import { 
-  SYSTEM_ERRORS 
+import {
+  SYSTEM_ERRORS
 } from '@/lib/constants';
 
 // GET /api/v1/health - 公開健康檢查
@@ -78,38 +78,37 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     const statusCode = healthChecks.status === 'healthy' ? 200 : 
                       healthChecks.status === 'degraded' ? 207 : 503;
 
-    return createSuccessResponse(healthChecks, undefined, statusCode, {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'X-API-Version': 'v1'
-    });
+    const res = createSuccessResponse(healthChecks, undefined, statusCode);
+    res.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.headers.set('X-API-Version', 'v1');
+    return res;
 
   } catch (error) {
     // 全局錯誤處理
     console.error('v1 健康檢查錯誤:', error);
-    return createErrorResponse(
+    const errRes = createErrorResponse(
       ErrorCode.INTERNAL_ERROR,
       SYSTEM_ERRORS.INTERNAL_ERROR,
       error instanceof Error ? error.message : '未知錯誤',
-      503,
-      {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'X-API-Version': 'v1'
-      }
+      503
     );
+    errRes.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    errRes.headers.set('X-API-Version', 'v1');
+    return errRes;
   }
 });
 
 // POST /api/v1/health - 詳細健康檢查（需要管理員認證）
-export const POST = withAuth(async (request: NextRequest, { authData }: { authData: any }) => {
+export const POST = withAdminAuth(async (request: NextRequest, { authData }) => {
   try {
     // 驗證管理員權限
-    if (!authData || authData.role !== 'ADMIN' && authData.role !== 'SUPER_ADMIN') {
+    const userRole = authData?.user?.role;
+    if (!authData || (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN')) {
       return createErrorResponse(
         ErrorCode.UNAUTHORIZED,
         '需要管理員權限才能訪問詳細健康信息',
         '權限不足',
-        403,
-        { 'X-API-Version': 'v1' }
+        403
       );
     }
 
@@ -127,7 +126,7 @@ export const POST = withAuth(async (request: NextRequest, { authData }: { authDa
       },
       user: {
         id: authData.userId,
-        role: authData.role
+        role: userRole
       },
       system: {
         cpus: require('os').cpus().length,
@@ -136,19 +135,20 @@ export const POST = withAuth(async (request: NextRequest, { authData }: { authDa
       }
     };
 
-    return createSuccessResponse(detailedHealth, undefined, 200, {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'X-API-Version': 'v1'
-    });
+    const detailedRes = createSuccessResponse(detailedHealth, undefined, 200);
+    detailedRes.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    detailedRes.headers.set('X-API-Version', 'v1');
+    return detailedRes;
 
   } catch (error) {
     console.error('v1 詳細健康檢查錯誤:', error);
-    return createErrorResponse(
+    const detailErrRes = createErrorResponse(
       ErrorCode.INTERNAL_ERROR,
       SYSTEM_ERRORS.INTERNAL_ERROR,
       error instanceof Error ? error.message : '未知錯誤',
-      500,
-      { 'X-API-Version': 'v1' }
+      500
     );
+    detailErrRes.headers.set('X-API-Version', 'v1');
+    return detailErrRes;
   }
-}, { requireAdmin: true });
+});

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, InvoiceStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -213,11 +213,11 @@ export async function markInvoicePaid(invoiceId: string) {
  * @param limit - Number of records to return (default 100)
  * @returns Array of Invoice records with user data
  */
-export async function getInvoicesByStatus(status: string, limit = 100) {
+export async function getInvoicesByStatus(status: InvoiceStatus, limit = 100) {
   try {
     const invoices = await prisma.invoice.findMany({
       where: {
-        status: status as any
+        status,
       },
       include: {
         user: {

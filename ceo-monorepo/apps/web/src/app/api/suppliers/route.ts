@@ -202,7 +202,7 @@ export const GET = withOptionalAuth(async (request, { authData }) => {
 
 // ==================== POST: 創建供應商 ====================
 
-export const POST = withAuth(async (request, { authData }) => {
+export const POST = withAuth()(async (request, { authData }) => {
   try {
     // 驗證請求體
     let body;
@@ -294,16 +294,15 @@ export const POST = withAuth(async (request, { authData }) => {
     });
 
     // 記錄審計日誌
-    await auditLogger.log({
-      userId: authData!.userId,
-      action: 'CREATE' as any, // 暫時使用 any，實際應該有正確的類型
-      resource: 'SUPPLIER' as any,
-      resourceId: supplier.id,
-      details: {
+    auditLogger.supplierAction(
+      'SUPPLIER_REGISTER',
+      authData!.userId,
+      supplier.id,
+      {
         taxId: supplier.taxId,
         companyName: supplier.companyName,
-      },
-    });
+      }
+    );
 
     // 構建響應數據
     const responseData: CreateSupplierResponse = {
@@ -314,8 +313,8 @@ export const POST = withAuth(async (request, { authData }) => {
       phone: supplier.phone,
       email: supplier.email,
       address: supplier.address,
-      industry: supplier.industry,
-      description: supplier.description,
+      industry: supplier.industry ?? '',
+      description: supplier.description ?? '',
       status: supplier.status,
       mainAccount: supplier.mainAccount ? {
         id: supplier.mainAccount.id,

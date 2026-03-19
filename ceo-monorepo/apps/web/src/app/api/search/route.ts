@@ -16,6 +16,25 @@ import {
 import { z } from 'zod';
 import { SYSTEM_ERRORS } from '@/lib/constants';
 
+// 搜尋結果類型定義
+interface SearchResultItem {
+  type: string;
+  count: number;
+  data: unknown[];
+}
+
+interface SearchResults {
+  query: string;
+  type: string;
+  results: SearchResultItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // 搜尋查詢驗證 Schema
 const SearchQuerySchema = z.object({
   q: z.string().min(1, '搜尋查詞不能為空').max(100, '搜尋查詞過長'),
@@ -38,7 +57,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     });
 
     if (!validation.success) {
-      const errorMessages = validation.error.errors
+      const errorMessages = validation.error.issues
         ?.map(e => `${e.path.join('.')}: ${e.message}`)
         .join('; ') || validation.error.message;
       return createErrorResponse(
@@ -52,12 +71,12 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     const { q, type: typeParam, limit: limitParam, page: pageParam } = validation.data;
 
     // 設定預設值並進行類型轉換
-    const type = (typeParam as any) || 'all';
+    const type = typeParam || 'all';
     const limit = Math.min(Math.max(parseInt(limitParam || '10'), 1), 50);
     const page = Math.max(parseInt(pageParam || '1'), 1);
     const skip = (page - 1) * limit;
 
-    let results: any = {
+    let results: SearchResults = {
       query: q,
       type: type,
       results: [],

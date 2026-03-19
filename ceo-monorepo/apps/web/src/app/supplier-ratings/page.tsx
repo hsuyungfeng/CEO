@@ -36,14 +36,14 @@ export default function SupplierRatingsPage() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          const suppliersData = result.data.map((s: any) => ({
-            id: s.id,
-            supplierId: s.id,
-            companyName: s.companyName,
-            avgRating: s.avgRating || 0,
-            totalRatings: s.totalRatings || 0,
-            onTimeDeliveryRate: s.onTimeDeliveryRate || 0,
-            totalDeliveries: s.totalDeliveries || 0,
+          const suppliersData = result.data.map((s: Record<string, unknown>) => ({
+            id: s.id as string,
+            supplierId: s.id as string,
+            companyName: s.companyName as string,
+            avgRating: (s.avgRating as number) || 0,
+            totalRatings: (s.totalRatings as number) || 0,
+            onTimeDeliveryRate: (s.onTimeDeliveryRate as number) || 0,
+            totalDeliveries: (s.totalDeliveries as number) || 0,
           }));
           setSuppliers(suppliersData);
         } else {

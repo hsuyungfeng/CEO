@@ -8,7 +8,22 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NotificationType } from '@prisma/client'
 
-const testNotifications = [
+interface TestNotification {
+  type: NotificationType
+  title: string
+  content: string
+  data: Record<string, unknown>
+}
+
+interface TestResult {
+  notification: TestNotification
+  success: boolean
+  result?: unknown
+  error?: string
+  timestamp: string
+}
+
+const testNotifications: TestNotification[] = [
   {
     type: NotificationType.SUPPLIER_APPLICATION,
     title: '供應商申請測試',
@@ -65,10 +80,10 @@ export default function TestNotificationsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState<any[]>([])
+  const [results, setResults] = useState<TestResult[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const sendTestNotification = async (notification: any) => {
+  const sendTestNotification = async (notification: TestNotification) => {
     try {
       setLoading(true)
       setError(null)
@@ -259,7 +274,7 @@ export default function TestNotificationsPage() {
                       </div>
                     )}
                     
-                    {result.result && (
+                    {result.result != null && (
                       <div className="mt-2 text-sm">
                         <details>
                           <summary className="cursor-pointer text-muted-foreground">

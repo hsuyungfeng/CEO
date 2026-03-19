@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { OrderStatus } from '@prisma/client';
 
 // GET /api/admin/groups - 聚合 groupId 相同的訂單，回傳團購列表
 export async function GET(request: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     const orders = await prisma.order.findMany({
       where: {
         groupId: { not: null },
-        ...(status ? { status: status as any } : {}),
+        ...(status ? { status: status as OrderStatus } : {}),
       },
       select: {
         groupId: true,

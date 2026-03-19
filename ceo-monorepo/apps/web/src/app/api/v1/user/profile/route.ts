@@ -26,7 +26,7 @@ function createV1ErrorResponse(
   code: ErrorCode,
   message: string,
   status: number = 400,
-  details?: any
+  details?: unknown
 ) {
   const response = createErrorResponse(code, message, details, status);
   response.headers.set('X-API-Version', 'v1');
@@ -34,7 +34,7 @@ function createV1ErrorResponse(
 }
 
 // 輔助函數：創建帶有版本標頭的成功響應
-function createV1SuccessResponse<T = any>(
+function createV1SuccessResponse<T>(
   data: T,
   pagination?: {
     page: number;
@@ -68,7 +68,7 @@ export const GET = withAuth()(async (request: NextRequest, { authData }) => {
       );
     }
     
-    const { userId } = authData.user;
+    const userId = authData.userId;
 
     // 查詢用戶資料（包含 member 資料）
     const user = await prisma.user.findUnique({
@@ -203,15 +203,17 @@ export const GET = withAuth()(async (request: NextRequest, { authData }) => {
 export const PATCH = withAuth()(async (request: NextRequest, { authData }) => {
   try {
     if (!authData) {
-      return createErrorResponse(
+      const patchErrRes = createErrorResponse(
         ErrorCode.UNAUTHORIZED,
         AUTH_ERRORS.UNAUTHORIZED,
-        401,
-        { 'X-API-Version': 'v1' }
+        undefined,
+        401
       );
+      patchErrRes.headers.set('X-API-Version', 'v1');
+      return patchErrRes;
     }
-    
-    const { userId } = authData.user;
+
+    const userId = authData.userId;
     
     // 解析請求體
     let updateData;
@@ -307,15 +309,17 @@ export const PATCH = withAuth()(async (request: NextRequest, { authData }) => {
 export const DELETE = withAuth()(async (request: NextRequest, { authData }) => {
   try {
     if (!authData) {
-      return createErrorResponse(
+      const deleteErrRes = createErrorResponse(
         ErrorCode.UNAUTHORIZED,
         AUTH_ERRORS.UNAUTHORIZED,
-        401,
-        { 'X-API-Version': 'v1' }
+        undefined,
+        401
       );
+      deleteErrRes.headers.set('X-API-Version', 'v1');
+      return deleteErrRes;
     }
-    
-    const { userId } = authData.user;
+
+    const userId = authData.userId;
 
     // 檢查用戶是否有未完成的訂單
     const activeOrders = await prisma.order.count({

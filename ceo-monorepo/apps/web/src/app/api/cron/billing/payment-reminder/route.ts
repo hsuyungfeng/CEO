@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { auditLogger } from '@/lib/audit-logger'
 import { PrismaCursorPagination, BatchProcessor } from '@/lib/cursor-pagination'
@@ -21,11 +22,12 @@ export async function POST(request: NextRequest) {
       invoiceId: string
       supplierId: string
       companyName: string
-      amount: any
+      amount: Prisma.Decimal
       dueDate: Date
       daysSinceDue: number
       reminderType: 'LOW_BALANCE' | 'WEEKLY_REMINDER' | 'FINAL_WARNING' | 'SUSPEND_WARNING'
     }> = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const batchProcessor = new BatchProcessor<any>()
 
     // 使用游標分頁處理未付款發票，批次大小 100

@@ -128,9 +128,9 @@ export default function SubmitSupplierRatingPage() {
         router.push(`/supplier-ratings/${supplierId}`);
       }, 1500);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('提交評分失敗:', error);
-      toast.error(error.message || '提交評分失敗，請稍後再試');
+      toast.error(error instanceof Error ? error.message : '提交評分失敗，請稍後再試');
     } finally {
       setSubmitting(false);
     }

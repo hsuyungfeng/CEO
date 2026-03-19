@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     let supplierId: string;
     let supplierProductIds: string[];
 
-    if ((authData.user as any).role === 'ADMIN') {
+    if (authData.user.role === 'ADMIN') {
       const supplier = await prisma.supplier.findFirst({
         where: { status: 'ACTIVE' },
         include: { products: { select: { productId: true } } },

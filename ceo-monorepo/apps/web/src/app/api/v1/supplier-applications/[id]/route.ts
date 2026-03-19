@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { AuthData } from '@/lib/auth-helper';
 import { 
   withAuth, 
   createSuccessResponse, 
@@ -30,7 +31,7 @@ const ReviewSchema = z.object({
  * @version 1.0.0
  * @route PATCH /api/v1/supplier-applications/[id]
  */
-export const PATCH = withAuth(async (request: NextRequest, { authData, params }: { authData: any, params: any }) => {
+export const PATCH = withAuth()(async (request: NextRequest, { authData, params }: { authData: AuthData | null, params?: Record<string, string> }) => {
   try {
     if (!authData?.user?.id) {
       return createErrorResponse(

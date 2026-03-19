@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
+import { Prisma, InvoiceStatus } from '@prisma/client'
 import { requireAdmin } from '@/lib/admin-auth'
 import { prisma } from '@/lib/prisma'
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       where.billingMonth = billingMonth
     }
     if (status && validStatuses.includes(status)) {
-      where.status = status as any
+      where.status = status as InvoiceStatus
     }
 
     // 同時查詢發票總數

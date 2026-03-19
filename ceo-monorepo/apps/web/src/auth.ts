@@ -158,7 +158,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // 處理 Google OAuth 登入
       if (account?.provider === 'google') {
         try {
-          const { email, name, sub: providerId, picture } = profile as any;
+          const { email, name, sub: providerId, picture } = profile as { email: string; name: string; sub: string; picture: string };
 
           // 檢查是否已有 OAuth 帳戶連結 - 改用 PocketBase
           const existingOAuthResult = await findOAuthAccount('google', providerId);
@@ -245,7 +245,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // 處理 Apple OAuth 登入
       if (account?.provider === 'apple') {
         try {
-          const { email, sub: providerId, name } = profile as any;
+          const { email, sub: providerId, name } = profile as { email: string; name: string; sub: string; picture: string };
 
           // 檢查是否已有 OAuth 帳戶連結 - 改用 PocketBase
           const existingOAuthResult = await findOAuthAccount('apple', providerId);
@@ -350,7 +350,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.status = token.status as string;
         // NextAuth v5 uses Date|null for emailVerified; we store boolean in JWT
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(session.user as any).emailVerified = token.emailVerified as boolean;
+        ;(session.user as { emailVerified?: boolean }).emailVerified = token.emailVerified as boolean;
         console.log('[Session Callback] Session populated successfully:', { id: session.user.id, role: session.user.role });
       } else {
         console.log('[Session Callback] Session not populated:', { hasSessionUser: !!session.user, hasToken: !!token });

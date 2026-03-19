@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     });
 
     // 格式化回傳結果
-    const result: Record<string, any> = {
+    const result: Record<string, unknown> = {
       contact_info: null,
       group_buy_owner: null
     };
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('更新系統設定失敗:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: (error as any).errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { error: 'Failed to update settings' },

@@ -8,6 +8,7 @@
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma, SupplierStatus } from '@prisma/client';
 import { 
   withOptionalAuth, 
   withAuth,
@@ -53,7 +54,7 @@ function createV1ErrorResponse(
   code: ErrorCode,
   message: string,
   status: number = 400,
-  details?: any
+  details?: unknown
 ) {
   const response = createErrorResponse(code, message, details, status);
   response.headers.set('X-API-Version', 'v1');
@@ -61,7 +62,7 @@ function createV1ErrorResponse(
 }
 
 // 創建帶有版本標頭的成功響應
-function createV1SuccessResponse<T = any>(
+function createV1SuccessResponse<T>(
   data: T,
   pagination?: {
     page: number;
@@ -110,18 +111,10 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     const skip = (page - 1) * limit;
 
     // 構建查詢條件
-    const where: {
-      status?: string;
-      OR?: Array<{
-        companyName?: { contains: string; mode: 'insensitive' };
-        taxId?: { contains: string; mode: 'insensitive' };
-        contactPerson?: { contains: string; mode: 'insensitive' };
-        email?: { contains: string; mode: 'insensitive' };
-      }>;
-    } = {};
-    
+    const where: Prisma.SupplierWhereInput = {};
+
     if (status !== 'ALL') {
-      where.status = status;
+      where.status = status as SupplierStatus;
     }
     
     if (search) {
@@ -152,15 +145,11 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
           verifiedAt: true,
           createdAt: true,
           updatedAt: true,
-          // 統計資訊 - 使用正確的關聯名稱
-          products: {
+          // 統計資訊
+          _count: {
             select: {
-              id: true
-            }
-          },
-          applications: {
-            select: {
-              id: true
+              products: true,
+              applications: true,
             }
           }
         },
@@ -187,8 +176,8 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
       verifiedAt: supplier.verifiedAt,
       createdAt: supplier.createdAt,
       updatedAt: supplier.updatedAt,
-      productsCount: supplier.products.length,
-      applicationsCount: supplier.applications.length,
+      productsCount: supplier._count.products,
+      applicationsCount: supplier._count.applications,
     }));
 
     // 計算分頁資訊
@@ -225,7 +214,7 @@ export const POST = withAuth()(async (request: NextRequest, { authData }) => {
       );
     }
 
-    const { userId } = authData.user;
+    const userId = authData.userId;
 
     // 解析請求體
     let requestData;

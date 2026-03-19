@@ -14,7 +14,7 @@ function OAuthRegisterContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [oauthData, setOauthData] = useState<any>(null);
+  const [oauthData, setOauthData] = useState<{ email: string; name: string; picture?: string } | null>(null);
   
   const [formData, setFormData] = useState({
     // 企業基本資料
@@ -59,8 +59,8 @@ function OAuthRegisterContent() {
           name: data.name,
           companyName: data.name || '', // 預設使用 Google 名稱作為公司名稱
         }));
-      } catch (err: any) {
-        setError(err.message || '載入註冊資料失敗');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : '載入註冊資料失敗');
       }
     };
 

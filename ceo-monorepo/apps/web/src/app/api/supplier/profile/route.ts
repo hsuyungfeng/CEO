@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ADMIN 角色：回傳第一個供應商供後台瀏覽使用
-    if ((session.user as any).role === 'ADMIN') {
+    if ((session.user as { role?: string }).role === 'ADMIN') {
       const supplier = await prisma.supplier.findFirst({
         where: { status: 'ACTIVE' },
         select: { id: true, companyName: true, taxId: true, status: true },

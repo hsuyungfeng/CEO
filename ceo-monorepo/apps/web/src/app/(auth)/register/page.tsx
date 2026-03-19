@@ -74,7 +74,7 @@ export default function RegisterPage() {
       if (!response.ok) {
         if (data.errors) {
           // 顯示所有驗證錯誤
-          const errorMessages = data.errors.map((err: any) => err.message).join(', ');
+          const errorMessages = data.errors.map((err: { message: string }) => err.message).join(', ');
           setError(errorMessages);
         } else {
           setError(data.error || '註冊失敗，請稍後再試');

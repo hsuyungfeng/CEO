@@ -16,7 +16,7 @@ interface Notification {
   type: NotificationType
   title: string
   content: string
-  data: any
+  data: Record<string, unknown>
   status: NotificationStatus
   isRead: boolean
   readAt: string | null
@@ -110,8 +110,8 @@ export default function NotificationsPage() {
         setStats({
           total: 0, // 需要額外API
           unread: data.data.count,
-          byType: {} as any,
-          byStatus: {} as any,
+          byType: {} as Record<NotificationType, number>,
+          byStatus: {} as Record<NotificationStatus, number>,
         })
       }
     } catch (error) {

@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
           deliveredAt: messageStatus === 'delivered' ? new Date() : undefined,
           error: errorMessage || undefined,
           metadata: {
-            ...(delivery.metadata as any),
+            ...(typeof delivery.metadata === 'object' && delivery.metadata !== null && !Array.isArray(delivery.metadata) ? delivery.metadata as Record<string, unknown> : {}),
             twilioStatus: messageStatus,
             errorCode,
             updatedAt: new Date().toISOString()
