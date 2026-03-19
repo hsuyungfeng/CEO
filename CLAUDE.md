@@ -132,5 +132,6 @@ SupplierStatus: PENDING | ACTIVE | SUSPENDED | REJECTED
 
 - **Server-side `auth()` 返回 null 問題**：部分頁面（如 `/recommendations`）的 server-side session 取得異常，目前 `TEST_MODE=true` 為暫時緩解措施
 - **Mobile app build**：`pnpm build` 從 monorepo 根目錄執行可能因 mobile 端相依缺失而失敗，請改在 `ceo-monorepo/apps/web/` 目錄執行
-- TypeScript 目前有約 **135 個 `any` 型別**（Phase 10.4 待處理）
-- CSRF 中介層已建立但尚未全面套用（Phase 10.2 待處理）
+- TypeScript 剩餘少數 `any` 型別（約 15-20 個）集中於 `sentry-*`、`redis-rate-limiter`、`prisma.$use`、`global-rate-limiter` 等框架整合層，屬難以消除的技術限制
+- CSRF 全域中介層已實裝於 `src/middleware.ts`（Phase 10.2 ✅ 完成）
+- Cron 游標分頁已透過 `PrismaCursorPagination` 實裝（Phase 10.2 ✅ 完成）
