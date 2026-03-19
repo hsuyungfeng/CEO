@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status') || undefined,
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
     };
 
     const validationResult = querySchema.safeParse(queryParams);
@@ -49,31 +49,39 @@ export async function GET(request: NextRequest) {
     const { status, startDate, endDate, page, limit } = validationResult.data;
     const skip = (page - 1) * limit;
 
-    // 檢查供應商身份
-    const userSupplier = await prisma.userSupplier.findFirst({
-      where: {
-        userId: authData.user.id,
-      },
-      include: {
-        supplier: {
-          include: {
-            products: {
-              select: { productId: true },
-            },
+    // 檢查供應商身份（ADMIN 可查看所有供應商第一筆）
+    let supplierId: string;
+    let supplierProductIds: string[];
+
+    if ((authData.user as any).role === 'ADMIN') {
+      const supplier = await prisma.supplier.findFirst({
+        where: { status: 'ACTIVE' },
+        include: { products: { select: { productId: true } } },
+      });
+      if (!supplier) {
+        return NextResponse.json({ data: [], pagination: { page, limit, total: 0, pages: 0 } });
+      }
+      supplierId = supplier.id;
+      supplierProductIds = supplier.products.map((p) => p.productId).filter((id): id is string => id !== null);
+    } else {
+      const userSupplier = await prisma.userSupplier.findFirst({
+        where: { userId: authData.user.id },
+        include: {
+          supplier: {
+            include: { products: { select: { productId: true } } },
           },
         },
-      },
-    });
+      });
 
-    if (!userSupplier?.supplier) {
-      return NextResponse.json(
-        { error: '您不是供應商，無法查看供應商訂單' },
-        { status: 403 }
-      );
+      if (!userSupplier?.supplier) {
+        return NextResponse.json(
+          { error: '您不是供應商，無法查看供應商訂單' },
+          { status: 403 }
+        );
+      }
+      supplierId = userSupplier.supplier.id;
+      supplierProductIds = userSupplier.supplier.products.map((p) => p.productId).filter((id): id is string => id !== null);
     }
-
-    const supplierId = userSupplier.supplier.id;
-    const supplierProductIds = userSupplier.supplier.products.map((p) => p.productId);
 
     // 建立查詢條件
     const where: any = {
@@ -121,7 +129,7 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          buyer: {
+          user: {
             select: {
               id: true,
               name: true,
@@ -143,16 +151,16 @@ export async function GET(request: NextRequest) {
       id: order.id,
       orderNo: order.orderNo,
       status: order.status,
-      totalAmount: order.items.reduce((sum, item) => sum + item.quantity * item.price, 0),
+      totalAmount: order.items.reduce((sum, item) => sum + Number(item.subtotal), 0),
       items: order.items.map((item) => ({
         id: item.id,
         name: item.product.name,
         quantity: item.quantity,
-        price: item.price,
+        price: Number(item.unitPrice),
         image: item.product.image,
       })),
       createdAt: order.createdAt.toISOString(),
-      buyer: order.buyer,
+      buyer: order.user,
     }));
 
     return NextResponse.json(
