@@ -18,7 +18,7 @@ interface SearchResult {
   category: string;
   relevance: number;
   url: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export default function SearchPage() {

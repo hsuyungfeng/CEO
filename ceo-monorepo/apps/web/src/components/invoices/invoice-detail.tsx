@@ -80,7 +80,7 @@ export function InvoiceDetail({ id }: { id: string }) {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, string> = {
       DRAFT: 'secondary',
       SENT: 'default',
       CONFIRMED: 'outline',

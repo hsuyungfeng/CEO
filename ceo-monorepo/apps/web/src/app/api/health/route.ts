@@ -22,7 +22,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
       timestamp: new Date().toISOString(),
       status: 'healthy' as 'healthy' | 'degraded' | 'unhealthy',
       uptime: process.uptime(),
-      checks: {} as Record<string, any>
+      checks: {} as Record<string, unknown>
     };
 
     // 1. 檢查資料庫連接

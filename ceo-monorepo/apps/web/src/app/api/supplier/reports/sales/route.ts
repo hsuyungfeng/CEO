@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 按類別分組
-    const categoryGroups: Record<string, any> = {}
+    const categoryGroups: Record<string, { count: number; products: unknown[] }> = {}
     products.forEach(p => {
       const categoryName = p.product?.category?.name || '未分類'
       if (!categoryGroups[categoryName]) {

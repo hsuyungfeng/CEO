@@ -49,7 +49,7 @@ export async function PATCH(
   } catch (error) {
     console.error('更新庫存錯誤:', error);
 
-    if ((error as any).code === 'P2025') {
+    if ((error as { code?: string }).code === 'P2025') {
       return NextResponse.json(
         {
           success: false,

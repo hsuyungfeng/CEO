@@ -274,7 +274,7 @@ export class NotificationIntegration {
     userId: string,
     title: string,
     content: string,
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ) {
     return NotificationService.createNotification({
       userId,

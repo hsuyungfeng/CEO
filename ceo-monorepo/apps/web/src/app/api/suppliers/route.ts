@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma, SupplierStatus } from '@prisma/client';
 import { z } from 'zod';
 import { 
   withOptionalAuth, 
@@ -112,10 +113,10 @@ export const GET = withOptionalAuth(async (request, { authData }) => {
     const skip = (page - 1) * limit;
 
     // 構建查詢條件
-    const where: Record<string, any> = {};
-    
+    const where: Prisma.SupplierWhereInput = {};
+
     if (status && status !== 'ALL') {
-      where.status = status;
+      where.status = status as SupplierStatus;
     }
 
     if (search) {

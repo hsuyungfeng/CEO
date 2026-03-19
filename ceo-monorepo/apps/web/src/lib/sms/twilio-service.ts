@@ -342,7 +342,7 @@ export async function sendSmsNotification(
   notificationType: NotificationType,
   title: string,
   content: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<SmsDeliveryResult> {
   const service = getTwilioSmsService();
   return service.sendNotificationSms(phoneNumber, notificationType, title, content, data);
