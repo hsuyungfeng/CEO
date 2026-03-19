@@ -160,14 +160,16 @@ export async function PUT(
     }
     
     const data = validationResult.data;
-    const updateData: any = {};
-    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: { name?: string; description?: string | null; isPublic?: boolean; items?: any } = {};
+
     // 更新基本資訊
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.isPublic !== undefined) updateData.isPublic = data.isPublic;
-    
+
     // 如果更新項目，先刪除舊項目再創建新項目
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let itemsUpdate: any = undefined;
     if (data.items) {
       // 檢查所有產品是否存在

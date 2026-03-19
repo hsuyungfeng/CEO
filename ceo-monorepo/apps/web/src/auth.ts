@@ -236,7 +236,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // 重定向到 OAuth 註冊頁面，帶上暫存 ID
           return `/register/oauth?id=${tempOAuth.id}`;
-        } catch (error: any) {
+        } catch (error: unknown) {
            console.error('Google OAuth 登入錯誤:', error);
           return false;
         }
@@ -319,7 +319,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // 重定向到 OAuth 註冊頁面，帶上暫存 ID
           return `/register/oauth?id=${tempOAuth.id}`;
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Apple OAuth 登入錯誤:', error);
           return false;
         }

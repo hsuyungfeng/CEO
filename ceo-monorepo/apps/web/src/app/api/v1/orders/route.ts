@@ -8,13 +8,14 @@
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { 
+import { Prisma, OrderStatus } from '@prisma/client';
+import {
   withAuth,
-  createSuccessResponse, 
+  createSuccessResponse,
   createErrorResponse,
   ErrorCode
 } from '@/lib/api-middleware';
-import { 
+import {
   PAGINATION,
   SYSTEM_ERRORS
 } from '@/lib/constants';
@@ -35,7 +36,7 @@ function createV1ErrorResponse(
   code: ErrorCode,
   message: string,
   status: number = 400,
-  details?: any
+  details?: unknown
 ) {
   const response = createErrorResponse(code, message, details, status);
   response.headers.set('X-API-Version', 'v1');
@@ -43,7 +44,7 @@ function createV1ErrorResponse(
 }
 
 // 創建帶有版本標頭的成功響應
-function createV1SuccessResponse<T = any>(
+function createV1SuccessResponse<T = unknown>(
   data: T,
   pagination?: {
     page: number;
@@ -71,7 +72,7 @@ export const GET = withAuth()(async (request: NextRequest, { authData }) => {
       );
     }
 
-    const { userId } = authData.user;
+    const userId = authData.userId;
 
     // 解析查詢參數
     const url = new URL(request.url);
@@ -101,12 +102,12 @@ export const GET = withAuth()(async (request: NextRequest, { authData }) => {
     const skip = (page - 1) * limit;
 
     // 構建查詢條件
-    const where: any = {
+    const where: Prisma.OrderWhereInput = {
       userId,
     };
-    
+
     if (status !== 'ALL') {
-      where.status = status;
+      where.status = status as OrderStatus;
     }
 
     // 查詢訂單（簡化查詢，只獲取基本資訊）

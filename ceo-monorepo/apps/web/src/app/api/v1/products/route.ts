@@ -8,6 +8,7 @@
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
     const skip = (queryParams.page - 1) * queryParams.limit;
 
     // 建立查詢條件
-    const where: any = {
+    const where: Prisma.ProductWhereInput = {
       isActive: true,
     };
 
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
     ];
 
     // 排序條件
-    let orderBy: any = { [queryParams.sortBy]: queryParams.order };
+    const orderBy: Prisma.ProductOrderByWithRelationInput = { [queryParams.sortBy]: queryParams.order };
 
     // 查詢商品
     const [products, total] = await Promise.all([

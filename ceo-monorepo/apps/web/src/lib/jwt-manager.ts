@@ -93,9 +93,9 @@ export class JWTManager {
       }
 
       return decoded;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if token is expired but within grace period
-      if (error.name === 'TokenExpiredError') {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
         try {
           const decoded = jwt.decode(token) as TokenPayload | null;
           if (decoded && decoded.exp) {
@@ -114,7 +114,7 @@ export class JWTManager {
         } catch {}
       }
 
-      logger.warn({ error: error.message }, '訪問令牌驗證失敗');
+      logger.warn({ error: error instanceof Error ? error.message : String(error) }, '訪問令牌驗證失敗');
       return null;
     }
   }
@@ -134,8 +134,8 @@ export class JWTManager {
       }
 
       return decoded;
-    } catch (error: any) {
-      logger.warn({ error: error.message }, '刷新令牌驗證失敗');
+    } catch (error: unknown) {
+      logger.warn({ error: error instanceof Error ? error.message : String(error) }, '刷新令牌驗證失敗');
       return null;
     }
   }

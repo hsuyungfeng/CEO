@@ -26,7 +26,14 @@ interface RateLimitStore {
 export class AdvancedRateLimiter {
   private config: RateLimitConfig;
   private memoryStore: RateLimitStore = {};
-  private redis: any = null;
+  private redis: {
+    eval: (...args: unknown[]) => Promise<unknown[]>;
+    get: (key: string) => Promise<string | null>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    set: (...args: any[]) => Promise<void>;
+    del: (key: string) => Promise<void>;
+    quit: () => Promise<void>;
+  } | null = null;
   private redisAvailable = false;
 
   constructor(config: RateLimitConfig) {
@@ -80,9 +87,9 @@ export class AdvancedRateLimiter {
     return this.checkLimitMemory(key, now);
   }
 
-  private async checkLimitRedis(key: string, now: number): Promise<any> {
+  private async checkLimitRedis(key: string, now: number): Promise<{ allowed: boolean; remaining: number; resetTime: number; retryAfter?: number }> {
     try {
-      const result = await this.redis.eval(
+      const result = await this.redis!.eval(
         `
         local key = KEYS[1]
         local limit = tonumber(ARGV[1])
@@ -118,7 +125,9 @@ export class AdvancedRateLimiter {
         now
       );
 
-      const [count, resetTime] = result;
+      const [countRaw, resetTimeRaw] = result;
+      const count = Number(countRaw);
+      const resetTime = Number(resetTimeRaw);
       const remaining = Math.max(0, this.config.maxRequests - count);
       const allowed = count <= this.config.maxRequests;
 
@@ -135,7 +144,7 @@ export class AdvancedRateLimiter {
     }
   }
 
-  private checkLimitMemory(key: string, now: number): any {
+  private checkLimitMemory(key: string, now: number): { allowed: boolean; remaining: number; resetTime: number; retryAfter?: number } {
     const entry = this.memoryStore[key];
     let count = 0;
     let resetTime = now + this.config.windowMs;

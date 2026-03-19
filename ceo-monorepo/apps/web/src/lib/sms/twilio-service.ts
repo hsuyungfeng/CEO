@@ -25,9 +25,24 @@ export interface SmsDeliveryResult {
   timestamp?: Date;
 }
 
+interface TwilioMessageInstance {
+  sid: string;
+  status: string;
+  errorMessage?: string;
+  dateCreated: string;
+}
+
+type TwilioMessagesResource = {
+  create: (params: { body: string; from: string; to: string; statusCallback?: string }) => Promise<TwilioMessageInstance>;
+} & ((sid: string) => { fetch: () => Promise<TwilioMessageInstance> });
+
+interface TwilioClient {
+  messages: TwilioMessagesResource;
+}
+
 export class TwilioSmsService {
   private config: SmsConfig;
-  private twilioClient: any;
+  private twilioClient: TwilioClient | null = null;
 
   constructor(config: SmsConfig) {
     this.config = config;
@@ -90,12 +105,12 @@ export class TwilioSmsService {
         status: result.status,
         timestamp: new Date()
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`SMS 發送失敗至 ${message.to}:`, error);
-      
+
       return {
         success: false,
-        error: error.message || '未知錯誤',
+        error: error instanceof Error ? error.message : '未知錯誤',
         status: 'failed',
         timestamp: new Date()
       };
@@ -110,7 +125,7 @@ export class TwilioSmsService {
     notificationType: NotificationType,
     title: string,
     content: string,
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ): Promise<SmsDeliveryResult> {
     // 格式化 SMS 內容
     const smsBody = this.formatNotificationBody(notificationType, title, content, data);
@@ -175,12 +190,12 @@ export class TwilioSmsService {
         timestamp: new Date(message.dateCreated),
         error: message.errorMessage || undefined
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`獲取 SMS 狀態失敗 ${messageId}:`, error);
-      
+
       return {
         success: false,
-        error: error.message || '未知錯誤'
+        error: error instanceof Error ? error.message : '未知錯誤'
       };
     }
   }
@@ -192,7 +207,7 @@ export class TwilioSmsService {
     notificationType: NotificationType,
     title: string,
     content: string,
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ): string {
     const platformName = 'CEO團購平台';
     let prefix = '';

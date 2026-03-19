@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { decode } from 'next-auth/jwt';
 import { findUserById, isUserActive } from '@/lib/prisma-auth';
+import type { User } from '@prisma/client';
 
 /**
  * Unified authentication helper for CEO團購電商平台
@@ -291,5 +292,5 @@ export async function validateTokenForRefresh(token: string) {
 export interface AuthData {
   id: string;
   userId: string;
-  user: any;
+  user: User | { id: string; email: string; name: string; taxId: string; role: string; status: string };
 }

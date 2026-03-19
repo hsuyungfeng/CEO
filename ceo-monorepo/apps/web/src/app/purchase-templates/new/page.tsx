@@ -47,7 +47,7 @@ export default function NewPurchaseTemplatePage() {
     setItems(newItems);
   };
 
-  const updateItem = (index: number, field: keyof TemplateItem, value: any) => {
+  const updateItem = (index: number, field: keyof TemplateItem, value: TemplateItem[keyof TemplateItem]) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
@@ -96,9 +96,9 @@ export default function NewPurchaseTemplatePage() {
       toast.success('模板創建成功');
       router.push('/purchase-templates');
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('創建模板失敗:', error);
-      toast.error(error.message || '創建模板失敗');
+      toast.error(error instanceof Error ? error.message : '創建模板失敗');
     } finally {
       setIsSubmitting(false);
     }

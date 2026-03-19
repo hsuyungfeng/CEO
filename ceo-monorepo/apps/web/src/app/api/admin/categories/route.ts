@@ -11,7 +11,7 @@ import {
 
 // 構建分類樹的輔助函數
 function buildCategoryTree(
-  categories: any[],
+  categories: CategoryWithChildren[],
   parentId: string | null = null
 ): CategoryWithChildren[] {
   return categories
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
     // 建立查詢條件
-    const where: any = {};
+    const where: { isActive?: boolean } = {};
     if (!includeInactive) {
       where.isActive = true;
     }
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // 構建分類樹
-    const categoryTree = buildCategoryTree(formattedCategories);
+    const categoryTree = buildCategoryTree(formattedCategories.map(c => ({ ...c, children: [] })));
 
     return NextResponse.json({
       success: true,
@@ -295,7 +295,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 執行批量操作
-    let updateData: any = {};
+    let updateData: { isActive: boolean } = { isActive: false };
     let message = '';
 
     switch (operation) {

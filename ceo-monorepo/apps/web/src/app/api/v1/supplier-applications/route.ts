@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma, ApplicationStatus } from '@prisma/client';
 import { 
   withAuth, 
   withOptionalAuth,
@@ -50,7 +51,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     const status = searchParams.get('status');
     const supplierId = searchParams.get('supplierId');
 
-    let where: any = {};
+    const where: Prisma.SupplierApplicationWhereInput = {};
 
     if (type === 'my') {
       where.applicantId = authData.user.id;
@@ -66,7 +67,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as ApplicationStatus;
     }
 
     const applications = await prisma.supplierApplication.findMany({
@@ -121,7 +122,7 @@ export const GET = withOptionalAuth(async (request: NextRequest, { authData }) =
   }
 });
 
-export const POST = withAuth(async (request: NextRequest, { authData }: { authData: any }) => {
+export const POST = withAuth()(async (request: NextRequest, { authData }) => {
   try {
     if (!authData?.user?.id) {
       return createErrorResponse(

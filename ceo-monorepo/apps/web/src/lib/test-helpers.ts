@@ -4,16 +4,51 @@
 
 import { NextRequest } from 'next/server'
 
+interface TestUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  company?: string;
+  phone?: string;
+  [key: string]: unknown;
+}
+
+interface ParsedApiResponse {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  success: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pagination: any;
+  status: number;
+  statusText: string;
+}
+
+interface TestRequestConfig {
+  url?: string;
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+interface TestContext {
+  params: Promise<Record<string, string>>;
+  authData: { userId: string; role: string; [key: string]: unknown } | null;
+}
+
 /**
  * 創建模擬的 NextRequest 對象
  */
 export function createMockNextRequest(
   method: string = 'GET',
   url: string = 'http://localhost:3000/api/test',
-  body?: any,
+  body?: unknown,
   headers: Record<string, string> = {}
 ): NextRequest {
-  const init: any = {
+  const init: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -25,19 +60,18 @@ export function createMockNextRequest(
     init.body = JSON.stringify(body)
   }
 
-  // 在測試環境中，使用簡單的模擬請求對象
   if (process.env.NODE_ENV === 'test') {
     return {
       url,
       method,
       headers: new Headers(headers),
-      json: async () => body || {},
-      text: async () => JSON.stringify(body || {}),
+      json: async () => body ?? {},
+      text: async () => JSON.stringify(body ?? {}),
       clone: function() { return this },
-    } as any
+    } as unknown as NextRequest
   }
-  
-  return new NextRequest(url, init)
+
+  return new NextRequest(url, init as ConstructorParameters<typeof NextRequest>[1])
 }
 
 /**
@@ -47,7 +81,7 @@ export function createAuthenticatedRequest(
   userId: string,
   method: string = 'GET',
   url: string = 'http://localhost:3000/api/test',
-  body?: any,
+  body?: unknown,
   role: string = 'MEMBER'
 ): NextRequest {
   return createMockNextRequest(method, url, body, {
@@ -64,7 +98,7 @@ export function createAdminRequest(
   userId: string = 'admin-test-id',
   method: string = 'GET',
   url: string = 'http://localhost:3000/api/test',
-  body?: any
+  body?: unknown
 ): NextRequest {
   return createAuthenticatedRequest(userId, method, url, body, 'ADMIN')
 }
@@ -76,7 +110,7 @@ export function createSupplierRequest(
   userId: string = 'supplier-test-id',
   method: string = 'GET',
   url: string = 'http://localhost:3000/api/test',
-  body?: any
+  body?: unknown
 ): NextRequest {
   return createAuthenticatedRequest(userId, method, url, body, 'SUPPLIER')
 }
@@ -84,40 +118,38 @@ export function createSupplierRequest(
 /**
  * 解析 API 響應
  */
-export async function parseApiResponse(response: any) {
-  // 處理測試環境中的模擬響應對象
-  if (response.json && typeof response.json === 'function') {
-    const data = await response.json()
+export async function parseApiResponse(response: Response | ParsedApiResponse): Promise<ParsedApiResponse> {
+  if (response instanceof Response) {
+    const data = await response.json() as Record<string, unknown>
     return {
-      success: data.success,
-      data: data.data,
-      error: data.error,
-      pagination: data.pagination,
+      success: data['success'],
+      data: data['data'],
+      error: data['error'],
+      pagination: data['pagination'],
       status: response.status,
       statusText: response.statusText,
     }
   }
-  
-  // 處理直接返回的數據對象（測試環境中的模擬響應）
+
   return {
     success: response.success,
     data: response.data,
     error: response.error,
     pagination: response.pagination,
-    status: response.status || 200,
-    statusText: response.statusText || 'OK',
+    status: response.status ?? 200,
+    statusText: response.statusText ?? 'OK',
   }
 }
 
 /**
  * 測試輔助：驗證成功的 API 響應
  */
-export function expectSuccessResponse(result: any, expectedData?: any) {
+export function expectSuccessResponse(result: ParsedApiResponse, expectedData?: unknown) {
   expect(result.success).toBe(true)
   expect(result.error).toBeNull()
-  
+
   if (expectedData) {
-    expect(result.data).toEqual(expect.objectContaining(expectedData))
+    expect(result.data).toEqual(expect.objectContaining(expectedData as Record<string, unknown>))
   }
 }
 
@@ -125,18 +157,18 @@ export function expectSuccessResponse(result: any, expectedData?: any) {
  * 測試輔助：驗證錯誤的 API 響應
  */
 export function expectErrorResponse(
-  result: any, 
-  expectedErrorCode?: string, 
+  result: ParsedApiResponse,
+  expectedErrorCode?: string,
   expectedStatusCode?: number
 ) {
   expect(result.success).toBe(false)
   expect(result.data).toBeNull()
   expect(result.error).toBeDefined()
-  
+
   if (expectedErrorCode) {
-    expect(result.error.code).toBe(expectedErrorCode)
+    expect((result.error as Record<string, unknown>)['code']).toBe(expectedErrorCode)
   }
-  
+
   if (expectedStatusCode) {
     expect(result.status).toBe(expectedStatusCode)
   }
@@ -145,10 +177,10 @@ export function expectErrorResponse(
 /**
  * 創建測試上下文（用於模擬中介層上下文）
  */
-export function createTestContext(params: Record<string, string> = {}) {
+export function createTestContext(params: Record<string, string> = {}): TestContext {
   return {
     params: Promise.resolve(params),
-    authData: null as any,
+    authData: null,
   }
 }
 
@@ -156,10 +188,10 @@ export function createTestContext(params: Record<string, string> = {}) {
  * 設置測試認證數據
  */
 export function setTestAuthData(
-  context: any,
+  context: TestContext,
   userId: string,
   role: string = 'MEMBER',
-  additionalData: any = {}
+  additionalData: Record<string, unknown> = {}
 ) {
   context.authData = {
     userId,
@@ -171,7 +203,7 @@ export function setTestAuthData(
 /**
  * 創建測試用戶對象
  */
-export function createTestUser(overrides: any = {}) {
+export function createTestUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
     id: 'test-user-id-' + Math.random().toString(36).substr(2, 9),
     email: 'test@example.com',
@@ -186,29 +218,22 @@ export function createTestUser(overrides: any = {}) {
 /**
  * 創建模擬認證數據
  */
-export function mockAuthData(user: any = null) {
-  if (!user) {
-    user = createTestUser()
-  }
+export function mockAuthData(user: Partial<TestUser> | null = null) {
+  const resolvedUser = user ?? createTestUser()
   return {
-    userId: user.id,
-    email: user.email,
-    role: user.role || 'MEMBER',
-    name: user.name,
+    userId: resolvedUser.id,
+    email: resolvedUser.email,
+    role: resolvedUser.role ?? 'MEMBER',
+    name: resolvedUser.name,
   }
 }
 
 /**
  * 創建測試請求（帶有可選的 body）
  */
-export function createTestRequest(config: {
-  url?: string;
-  method?: string;
-  body?: any;
-  headers?: Record<string, string>;
-}) {
+export function createTestRequest(config: TestRequestConfig): NextRequest {
   const { url = 'http://localhost:3000/api/test', method = 'GET', body, headers = {} } = config;
-  
+
   return {
     url,
     method,
@@ -216,23 +241,8 @@ export function createTestRequest(config: {
       'Content-Type': 'application/json',
       ...headers,
     }),
-    json: async () => body || {},
-    text: async () => JSON.stringify(body || {}),
+    json: async () => body ?? {},
+    text: async () => JSON.stringify(body ?? {}),
     clone: function() { return this },
-  } as any;
-}
-
-/**
- * 創建模擬認證數據
- */
-export function mockAuthData(user: any = null) {
-  if (!user) {
-    user = createTestUser()
-  }
-  return {
-    userId: user.id,
-    email: user.email,
-    role: user.role || 'MEMBER',
-    name: user.name,
-  }
+  } as unknown as NextRequest;
 }

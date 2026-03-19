@@ -3,7 +3,7 @@
  * 用於處理大量數據的分批次處理，避免記憶體爆炸
  */
 
-import { Prisma } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 
 /**
  * 游標分頁配置
@@ -124,9 +124,9 @@ export class PrismaCursorPagination {
    * 使用游標分頁處理供應商
    */
   static async processSuppliers(
-    prisma: any,
+    prisma: PrismaClient,
     where: Prisma.SupplierWhereInput,
-    processBatch: (suppliers: any[]) => Promise<void>,
+    processBatch: (suppliers: Prisma.SupplierGetPayload<object>[]) => Promise<void>,
     options: {
       batchSize?: number
       include?: Prisma.SupplierInclude
@@ -141,7 +141,7 @@ export class PrismaCursorPagination {
       onProgress,
     } = options
 
-    const pagination = new CursorPagination<any>({
+    const pagination = new CursorPagination<Prisma.SupplierGetPayload<object>>({
       batchSize,
       cursorField: 'id',
       order: 'asc',
@@ -169,9 +169,9 @@ export class PrismaCursorPagination {
    * 使用游標分頁處理供應商發票
    */
   static async processSupplierInvoices(
-    prisma: any,
+    prisma: PrismaClient,
     where: Prisma.SupplierInvoiceWhereInput,
-    processBatch: (invoices: any[]) => Promise<void>,
+    processBatch: (invoices: Prisma.SupplierInvoiceGetPayload<object>[]) => Promise<void>,
     options: {
       batchSize?: number
       include?: Prisma.SupplierInvoiceInclude
@@ -186,7 +186,7 @@ export class PrismaCursorPagination {
       onProgress,
     } = options
 
-    const pagination = new CursorPagination<any>({
+    const pagination = new CursorPagination<Prisma.SupplierInvoiceGetPayload<object>>({
       batchSize,
       cursorField: 'id',
       order: 'asc',
@@ -214,13 +214,13 @@ export class PrismaCursorPagination {
    * 使用游標分頁處理任何 Prisma 模型
    */
   static async processModel<T>(
-    prisma: any,
+    prisma: PrismaClient,
     model: string,
-    where: any,
+    where: Record<string, unknown>,
     processBatch: (items: T[]) => Promise<void>,
     options: {
       batchSize?: number
-      include?: any
+      include?: Record<string, unknown>
       maxBatches?: number
       cursorField?: string
       order?: 'asc' | 'desc'
@@ -253,7 +253,7 @@ export class PrismaCursorPagination {
 
       const orderBy = { [cursorField]: order }
 
-      return await (prisma[model] as any).findMany({
+      return await (prisma[model as keyof PrismaClient] as unknown as { findMany: (args: unknown) => Promise<T[]> }).findMany({
         where: whereClause,
         include,
         orderBy,
@@ -322,7 +322,7 @@ export class BatchProcessor<T> {
         this.stats.errorCount++
         const errorMsg = error instanceof Error ? error.message : String(error)
         this.stats.errors.push({
-          itemId: (item as any).id || `item-${i}`,
+          itemId: (item as Record<string, unknown>)['id'] as string || `item-${i}`,
           error: errorMsg,
         })
 

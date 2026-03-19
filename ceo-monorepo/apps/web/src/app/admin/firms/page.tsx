@@ -190,9 +190,9 @@ export default function FirmsPage() {
       // 重新載入列表
       fetchFirms()
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('新增廠商錯誤:', error)
-      toast.error(error.message || '新增廠商失敗')
+      toast.error(error instanceof Error ? error.message : '新增廠商失敗')
     } finally {
       setAdding(false)
     }
@@ -237,9 +237,9 @@ export default function FirmsPage() {
         firm.id === updatedFirm.id ? updatedFirm : firm
       ))
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('更新廠商錯誤:', error)
-      toast.error(error.message || '更新廠商失敗')
+      toast.error(error instanceof Error ? error.message : '更新廠商失敗')
     } finally {
       setEditing(false)
     }
@@ -268,9 +268,9 @@ export default function FirmsPage() {
       // 重新載入列表
       fetchFirms()
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('刪除廠商錯誤:', error)
-      toast.error(error.message || '刪除廠商失敗')
+      toast.error(error instanceof Error ? error.message : '刪除廠商失敗')
     } finally {
       setDeleting(false)
     }

@@ -11,23 +11,23 @@ export async function GET(request: NextRequest) {
     const simpleTest = { message: '除錯端點正常', timestamp: new Date().toISOString() };
     
     // 測試 2: 資料庫連接
-    let dbTest = { connected: false, error: null };
+    let dbTest: { connected: boolean; error: string | null } = { connected: false, error: null };
     try {
       // 執行簡單查詢
       await prisma.$queryRaw`SELECT 1`;
       dbTest.connected = true;
-    } catch (error: any) {
-      dbTest.error = error.message;
+    } catch (error: unknown) {
+      dbTest.error = error instanceof Error ? error.message : String(error);
     }
     
     // 測試 3: 供應商表是否存在
-    let suppliersTest = { exists: false, count: 0, error: null };
+    let suppliersTest: { exists: boolean; count: number; error: string | null } = { exists: false, count: 0, error: null };
     try {
       const count = await prisma.supplier.count();
       suppliersTest.exists = true;
       suppliersTest.count = count;
-    } catch (error: any) {
-      suppliersTest.error = error.message;
+    } catch (error: unknown) {
+      suppliersTest.error = error instanceof Error ? error.message : String(error);
     }
     
     return NextResponse.json({
@@ -43,14 +43,14 @@ export async function GET(request: NextRequest) {
       }
     }, { status: 200 });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       data: null,
       error: {
         code: 'DEBUG_ERROR',
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        message: error instanceof Error ? error.message : String(error),
+        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
       }
     }, { status: 500 });
   }

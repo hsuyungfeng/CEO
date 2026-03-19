@@ -119,11 +119,11 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       console.log('WebSocket 驗證成功')
     })
 
-    const unsubscribeAuthError = wsManager.on('auth_error', (error: any) => {
+    const unsubscribeAuthError = wsManager.on('auth_error', (error: unknown) => {
       console.error('WebSocket 驗證失敗:', error)
     })
 
-    const unsubscribeError = wsManager.on('error', (error: any) => {
+    const unsubscribeError = wsManager.on('error', (error: unknown) => {
       console.error('WebSocket 錯誤:', error)
     })
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthData, AuthData } from '@/lib/auth-helper';
 import { UserRole } from '@prisma/client';
 import { USER_ROLES } from '@/lib/constants';
+import type { ZodTypeAny, ZodIssue } from 'zod';
 
 /**
  * API 中間件工具集 - Phase 10.4 代碼品質提升
@@ -26,6 +27,7 @@ export interface AuthOptions {
 /**
  * API 處理函數類型
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApiHandler<T = any> = (
   request: NextRequest,
   context: {
@@ -37,13 +39,14 @@ export type ApiHandler<T = any> = (
 /**
  * 統一 API 響應格式
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ApiResponse<T = any> {
   success: boolean;
   data: T | null;
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   } | null;
   pagination?: {
     page: number;
@@ -113,9 +116,9 @@ export function createSuccessResponse<T = any>(
       ok: status >= 200 && status < 300,
       json: async () => responseData,
       headers,
-    } as any
+    } as unknown as NextResponse<ApiResponse<T>>
   }
-  
+
   return NextResponse.json(responseData, { status });
 }
 
@@ -125,7 +128,7 @@ export function createSuccessResponse<T = any>(
 export function createErrorResponse(
   code: ErrorCode,
   message: string,
-  details?: any,
+  details?: unknown,
   status: number = 400
 ): NextResponse<ApiResponse> {
   const responseData = {
@@ -149,9 +152,9 @@ export function createErrorResponse(
       ok: status >= 200 && status < 300,
       json: async () => responseData,
       headers,
-    } as any
+    } as unknown as NextResponse<ApiResponse>
   }
-  
+
   return NextResponse.json({
     success: false,
     data: null,
@@ -195,7 +198,7 @@ export function createNotFoundResponse(
  * 創建驗證錯誤響應
  */
 export function createValidationErrorResponse(
-  errors: any[],
+  errors: ZodIssue[],
   message: string = '輸入驗證失敗'
 ): NextResponse<ApiResponse> {
   return createErrorResponse(ErrorCode.VALIDATION_ERROR, message, { errors }, 400);
@@ -237,11 +240,11 @@ export function withAuth(options: AuthOptions = {}) {
             },
             provider: 'test',
           };
-          return await handler(request, { ...context, authData: fakeAuthData as any });
+          return await handler(request, { ...context, authData: fakeAuthData as unknown as AuthData });
         }
 
         // 獲取認證數據
-        const authData = await getAuthData(request);
+        const authData = await getAuthData(request) as AuthData | null;
 
         // 檢查是否必需認證
         if (required && !authData) {
@@ -325,7 +328,7 @@ export function withOptionalAuth<T = any>(handler: ApiHandler<T>) {
  * 請求體驗證中間件
  */
 export function withValidation<T = any>(
-  schema: any, // Zod 或其他驗證庫的 schema
+  schema: ZodTypeAny,
   options: {
     /** 驗證請求體（預設：true） */
     validateBody?: boolean;
@@ -347,7 +350,7 @@ export function withValidation<T = any>(
       context: { params?: Record<string, string>; authData: AuthData | null }
     ): Promise<NextResponse> {
       try {
-        const errors: any[] = [];
+        const errors: ZodIssue[] = [];
 
         // 驗證請求體
         if (validateBody && ['POST', 'PUT', 'PATCH'].includes(request.method)) {
@@ -355,13 +358,11 @@ export function withValidation<T = any>(
             const body = await request.json();
             const result = schema.safeParse(body);
             if (!result.success) {
-              errors.push(...result.error.errors);
+              errors.push(...result.error.issues);
             }
           } catch (error) {
-            errors.push({
-              path: ['body'],
-              message: '請求體格式無效',
-            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            errors.push({ code: 'custom', path: ['body'], message: '請求體格式無效' } as any);
           }
         }
 
@@ -371,7 +372,7 @@ export function withValidation<T = any>(
           const queryParams = Object.fromEntries(searchParams.entries());
           const result = schema.safeParse(queryParams);
           if (!result.success) {
-            errors.push(...result.error.errors);
+            errors.push(...result.error.issues);
           }
         }
 
@@ -379,7 +380,7 @@ export function withValidation<T = any>(
         if (validateParams && context.params) {
           const result = schema.safeParse(context.params);
           if (!result.success) {
-            errors.push(...result.error.errors);
+            errors.push(...result.error.issues);
           }
         }
 
@@ -422,13 +423,15 @@ export function composeMiddlewares<T = any>(
 /**
  * 常用中間件組合
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const withAuthAndValidation = <T = any>(
-  schema: any,
+  schema: ZodTypeAny,
   authOptions?: AuthOptions
 ) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return composeMiddlewares<T>(
-    withAuth(authOptions),
-    withValidation(schema)
+    withAuth(authOptions) as any,
+    withValidation(schema) as any
   );
 };
 
@@ -463,12 +466,13 @@ export const withAuthAndValidation = <T = any>(
 /**
  * 簡化 API 路由創建的輔助函數
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createApiRoute<T = any>(
   handler: ApiHandler<T>,
   options: {
     auth?: AuthOptions;
     validation?: {
-      schema: any;
+      schema: ZodTypeAny;
       validateBody?: boolean;
       validateQuery?: boolean;
       validateParams?: boolean;
@@ -479,19 +483,21 @@ export function createApiRoute<T = any>(
 
   // 應用驗證中間件
   if (options.validation) {
-    wrappedHandler = withValidation(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    wrappedHandler = (withValidation(
       options.validation.schema,
       {
         validateBody: options.validation.validateBody,
         validateQuery: options.validation.validateQuery,
         validateParams: options.validation.validateParams,
       }
-    )(wrappedHandler);
+    ) as any)(wrappedHandler);
   }
 
   // 應用認證中間件
   if (options.auth) {
-    wrappedHandler = withAuth(options.auth)(wrappedHandler);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    wrappedHandler = (withAuth(options.auth) as any)(wrappedHandler);
   }
 
   return wrappedHandler;

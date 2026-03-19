@@ -176,7 +176,7 @@ export class NotificationWebSocketServer {
     }, 15000) // 每15秒發送一次心跳
   }
 
-  public async sendNotificationToUser(userId: string, notification: any) {
+  public async sendNotificationToUser(userId: string, notification: NotificationMessage['data'] & { createdAt: Date }) {
     const message: NotificationMessage = {
       type: 'notification',
       data: {
@@ -207,7 +207,7 @@ export class NotificationWebSocketServer {
     return sentCount
   }
 
-  public async broadcastNotification(notification: any, excludeUserIds: string[] = []) {
+  public async broadcastNotification(notification: NotificationMessage['data'] & { createdAt: Date }, excludeUserIds: string[] = []) {
     const message: NotificationMessage = {
       type: 'notification',
       data: {

@@ -178,19 +178,17 @@ export async function PATCH(
       });
 
       // 記錄操作日誌
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyData = data as any;
+      const anyData = data as Record<string, unknown>;
       let logAction: 'INFO_UPDATE' | 'STATUS_CHANGE' = 'INFO_UPDATE';
       let oldValue: string | null = null;
       let newValue: string | null = null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let metadata: any = null;
+      let metadata: Record<string, unknown> | null = null;
 
       if (updateType === 'status') {
         logAction = 'STATUS_CHANGE';
         oldValue = user.status;
-        newValue = anyData.status ?? null;
-        metadata = { reason: anyData.reason ?? null };
+        newValue = (anyData.status as string) ?? null;
+        metadata = { reason: anyData.reason ?? null } as Record<string, unknown>;
       } else {
         // 記錄變更的欄位
         const changedFields: Record<string, { old: unknown; new: unknown }> = {};
@@ -215,8 +213,8 @@ export async function PATCH(
           action: logAction,
           oldValue,
           newValue,
-          reason: anyData.reason ?? null,
-          metadata: metadata ?? undefined,
+          reason: (anyData.reason as string | null) ?? null,
+          metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : undefined,
         },
       });
 
