@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, Minus, CreditCard, ShoppingBag, Package } from 'lucide-react';
+import { Trash2, Plus, Minus, CreditCard, ShoppingBag, Package, TrendingUp } from 'lucide-react';
 
 interface CartItem {
   id: string;
@@ -134,6 +134,17 @@ export default function CartPage() {
   }
 
   const fmt = (n: number) => `NT$ ${Number(n).toLocaleString('zh-TW')}`;
+
+  // 計算分級定價升級提示：找到下一個尚未達到的 tier
+  function getNextTierHint(item: CartItem): { need: number; savePer: number } | null {
+    const tiers = [...item.product.priceTiers].sort((a, b) => a.minQty - b.minQty);
+    const nextTier = tiers.find(t => t.minQty > item.quantity);
+    if (!nextTier) return null;
+    const savePer = item.unitPrice - nextTier.price;
+    if (savePer <= 0) return null;
+    return { need: nextTier.minQty - item.quantity, savePer };
+  }
+
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
   const totalAmount = items.reduce((s, i) => s + i.subtotal, 0);
   const totalSavings = summary?.totalSavings ?? 0;
@@ -188,6 +199,7 @@ export default function CartPage() {
                 const isUpdating = updatingIds.has(item.id);
                 const isRemoving = removingIds.has(item.id);
                 const moq = item.product.priceTiers[0]?.minQty ?? 1;
+                const tierHint = getNextTierHint(item);
 
                 return (
                   <Card key={item.id} className={`transition-opacity ${isRemoving ? 'opacity-40' : ''}`}>
@@ -277,9 +289,17 @@ export default function CartPage() {
                           </div>
 
                           {/* 小計 */}
-                          <div className="mt-2 text-right">
-                            <span className="text-sm text-gray-500">小計：</span>
-                            <span className="font-semibold text-gray-900">{fmt(item.subtotal)}</span>
+                          <div className="mt-2 flex items-center justify-between flex-wrap gap-1">
+                            {tierHint && (
+                              <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+                                <TrendingUp className="w-3 h-3 shrink-0" />
+                                再買 <span className="font-bold">{tierHint.need}</span> 件，每件省 <span className="font-bold">{fmt(tierHint.savePer)}</span>
+                              </div>
+                            )}
+                            <div className="ml-auto">
+                              <span className="text-sm text-gray-500">小計：</span>
+                              <span className="font-semibold text-gray-900">{fmt(item.subtotal)}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
