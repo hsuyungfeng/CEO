@@ -8,6 +8,11 @@ interface SimplifiedDashboardData {
   totalOrders: number;
   totalRevenue: number;
   activeUsers: number;
+  // 待處理項目（不受時間範圍影響）
+  pendingOrders: number;
+  pendingSuppliers: number;
+  totalSuppliers: number;
+  totalMembers: number;
 }
 
 // GET: 獲取簡化儀表板統計數據 (3 個關鍵指標)
@@ -47,44 +52,67 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    // 並行獲取 3 個關鍵統計數據
+    // 並行獲取所有統計數據
     const [
       totalOrders,
       totalRevenue,
       activeUsers,
+      pendingOrders,
+      pendingSuppliers,
+      totalSuppliers,
+      totalMembers,
     ] = await Promise.all([
-      // 1. 總訂單數
+      // 1. 期間訂單數
       prisma.order.count({
-        where: {
-          createdAt: { gte: startDate },
-        },
+        where: { createdAt: { gte: startDate } },
       }),
 
-      // 2. 總營業額
+      // 2. 期間營業額
       prisma.order.aggregate({
         where: {
           createdAt: { gte: startDate },
           status: { not: 'CANCELLED' },
         },
-        _sum: {
-          totalAmount: true,
-        },
+        _sum: { totalAmount: true },
       }),
 
-      // 3. 活躍會員數
+      // 3. 期間新增會員數
       prisma.user.count({
         where: {
           role: 'MEMBER',
           createdAt: { gte: startDate },
         },
       }),
+
+      // 4. 待處理訂單（全部，不限時間）
+      prisma.order.count({
+        where: { status: 'PENDING' },
+      }),
+
+      // 5. 待審核供應商（全部，不限時間）
+      prisma.supplier.count({
+        where: { status: 'PENDING' },
+      }),
+
+      // 6. 全部供應商數
+      prisma.supplier.count({
+        where: { status: 'ACTIVE' },
+      }),
+
+      // 7. 全部會員數
+      prisma.user.count({
+        where: { role: 'MEMBER', status: 'ACTIVE' },
+      }),
     ]);
 
-    // 返回簡化的儀表板數據（只有 3 個關鍵指標）
     const data: SimplifiedDashboardData = {
       totalOrders,
       totalRevenue: Number(totalRevenue._sum.totalAmount || 0),
       activeUsers,
+      pendingOrders,
+      pendingSuppliers,
+      totalSuppliers,
+      totalMembers,
     };
 
     return NextResponse.json({
