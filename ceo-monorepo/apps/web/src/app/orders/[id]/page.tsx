@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ShoppingCart, CheckCircle } from 'lucide-react';
 
 interface OrderItem {
   id: string;
+  productId?: string;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -38,6 +39,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const [reorderDone, setReorderDone] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -69,6 +72,30 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       alert(err instanceof Error ? err.message : '取消訂單失敗');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  // 再購：將訂單中所有商品加回購物車
+  const handleReorder = async () => {
+    if (!order || reordering) return;
+    setReordering(true);
+    try {
+      const itemsToAdd = order.items.filter(i => i.productId);
+      await Promise.all(
+        itemsToAdd.map(item =>
+          fetch('/api/cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: item.productId, quantity: item.quantity }),
+          })
+        )
+      );
+      setReorderDone(true);
+      setTimeout(() => router.push('/cart'), 1200);
+    } catch {
+      alert('加入購物車失敗，請稍後再試');
+    } finally {
+      setReordering(false);
     }
   };
 
@@ -232,15 +259,25 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
         <Card>
           <CardContent className="pt-6">
-            <div className="flex justify-between items-end">
-              <div>
+            <div className="flex justify-between items-end flex-wrap gap-3">
+              <div className="flex gap-2 flex-wrap">
+                {/* 再購按鈕 */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reordering || reorderDone}
+                  onClick={handleReorder}
+                  className="gap-1.5"
+                >
+                  {reorderDone
+                    ? <><CheckCircle className="w-4 h-4 text-green-600" /> 已加入購物車</>
+                    : reordering
+                      ? <><RotateCcw className="w-4 h-4 animate-spin" /> 加入中...</>
+                      : <><ShoppingCart className="w-4 h-4" /> 再次購買</>
+                  }
+                </Button>
                 {order.status === 'PENDING' && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={cancelling}
-                    onClick={cancelOrder}
-                  >
+                  <Button variant="destructive" size="sm" disabled={cancelling} onClick={cancelOrder}>
                     {cancelling ? '取消中...' : '取消訂單'}
                   </Button>
                 )}
