@@ -45,6 +45,8 @@ export default function CartPage() {
   // 批量勾選
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [clearing, setClearing] = useState(false);
+  // 備註（itemId -> note text）
+  const [noteValues, setNoteValues] = useState<Record<string, string>>({});
   // debounce timer per item
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -61,8 +63,15 @@ export default function CartPage() {
         throw new Error(`HTTP ${res.status}`);
       }
       const data = await res.json();
-      setItems(data.items || []);
+      const loadedItems: CartItem[] = data.items || [];
+      setItems(loadedItems);
       setSummary(data.summary || null);
+      // 初始化備註（從 localStorage 恢復）
+      let savedNotes: Record<string, string> = {};
+      try { savedNotes = JSON.parse(localStorage.getItem('cart_notes') ?? '{}'); } catch {}
+      const notes: Record<string, string> = {};
+      loadedItems.forEach((i: CartItem) => { notes[i.id] = savedNotes[i.id] ?? ''; });
+      setNoteValues(notes);
     } catch (err) {
       setError(err instanceof Error ? err.message : '載入購物車失敗');
     } finally {
@@ -177,6 +186,15 @@ export default function CartPage() {
     } finally {
       setClearing(false);
     }
+  }
+
+  function handleNoteChange(itemId: string, value: string) {
+    setNoteValues(prev => {
+      const next = { ...prev, [itemId]: value };
+      // 備註暫存於 localStorage，等待後端 migration 完成後再改為 API
+      try { localStorage.setItem('cart_notes', JSON.stringify(next)); } catch {}
+      return next;
+    });
   }
 
   const fmt = (n: number) => `NT$ ${Number(n).toLocaleString('zh-TW')}`;
@@ -381,6 +399,18 @@ export default function CartPage() {
                               <span className="text-sm text-gray-500">小計：</span>
                               <span className="font-semibold text-gray-900">{fmt(item.subtotal)}</span>
                             </div>
+                          </div>
+
+                          {/* 採購備註 */}
+                          <div className="mt-2">
+                            <textarea
+                              rows={1}
+                              maxLength={200}
+                              placeholder="採購備註（選填）"
+                              value={noteValues[item.id] ?? ''}
+                              onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                              className="w-full text-xs border border-gray-200 rounded px-2 py-1 resize-none outline-none focus:ring-1 focus:ring-blue-300 text-gray-600 placeholder-gray-300"
+                            />
                           </div>
                         </div>
                       </div>
