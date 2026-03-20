@@ -51,8 +51,31 @@ export default function CartPage() {
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
-    fetchCart();
+    mergeGuestCartThenFetch();
   }, []);
+
+  // 訪客購物車合併：登入後將 localStorage guest_cart 合併到伺服器
+  async function mergeGuestCartThenFetch() {
+    try {
+      const raw = localStorage.getItem('guest_cart');
+      if (raw) {
+        const guestItems: Array<{ productId: string; quantity: number }> = JSON.parse(raw);
+        if (guestItems.length > 0) {
+          const res = await fetch('/api/cart/merge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: guestItems }),
+          });
+          if (res.ok) {
+            localStorage.removeItem('guest_cart');
+          }
+        }
+      }
+    } catch {
+      // 靜默失敗，不影響主流程
+    }
+    fetchCart();
+  }
 
   async function fetchCart() {
     try {
