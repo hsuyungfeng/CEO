@@ -42,6 +42,9 @@ export default function CartPage() {
   // 追蹤每個 item 是否正在更新/刪除
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
+  // 批量勾選
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [clearing, setClearing] = useState(false);
   // debounce timer per item
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -133,6 +136,49 @@ export default function CartPage() {
     }
   }
 
+  function toggleSelect(itemId: string) {
+    setSelectedIds(prev => {
+      const s = new Set(prev);
+      s.has(itemId) ? s.delete(itemId) : s.add(itemId);
+      return s;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)));
+    }
+  }
+
+  async function handleBatchRemove() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`確定要移除選取的 ${selectedIds.size} 件商品？`)) return;
+    const ids = Array.from(selectedIds);
+    ids.forEach(id => setRemovingIds(prev => new Set(prev).add(id)));
+    await Promise.all(ids.map(id => fetch(`/api/cart/${id}`, { method: 'DELETE' })));
+    setItems(prev => prev.filter(i => !selectedIds.has(i.id)));
+    setSelectedIds(new Set());
+    const cartRes = await fetch('/api/cart');
+    const cartData = await cartRes.json();
+    setSummary(cartData.summary);
+    ids.forEach(id => setRemovingIds(prev => { const s = new Set(prev); s.delete(id); return s; }));
+  }
+
+  async function handleClearCart() {
+    if (!confirm('確定要清空整個購物車？')) return;
+    setClearing(true);
+    try {
+      await fetch('/api/cart', { method: 'DELETE' });
+      setItems([]);
+      setSummary(null);
+      setSelectedIds(new Set());
+    } finally {
+      setClearing(false);
+    }
+  }
+
   const fmt = (n: number) => `NT$ ${Number(n).toLocaleString('zh-TW')}`;
 
   // 計算分級定價升級提示：找到下一個尚未達到的 tier
@@ -174,12 +220,26 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <ShoppingBag className="w-7 h-7 text-blue-600" />
           <h1 className="text-3xl font-bold">購物車</h1>
           {totalItems > 0 && (
             <Badge variant="secondary" className="text-base px-2">{totalItems} 件</Badge>
           )}
+          <div className="ml-auto flex gap-2">
+            {selectedIds.size > 0 && (
+              <Button variant="destructive" size="sm" onClick={handleBatchRemove} className="gap-1">
+                <Trash2 className="w-3.5 h-3.5" />
+                刪除選取 ({selectedIds.size})
+              </Button>
+            )}
+            {items.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleClearCart} disabled={clearing} className="gap-1 text-red-600 border-red-200 hover:bg-red-50">
+                <Trash2 className="w-3.5 h-3.5" />
+                {clearing ? '清空中...' : '清空購物車'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {items.length === 0 ? (
@@ -195,6 +255,17 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 商品列表 */}
             <div className="lg:col-span-2 space-y-3">
+              {/* 全選列 */}
+              <div className="flex items-center gap-2 px-1">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-blue-600 cursor-pointer"
+                  checked={items.length > 0 && selectedIds.size === items.length}
+                  onChange={toggleSelectAll}
+                  aria-label="全選"
+                />
+                <span className="text-sm text-gray-500">全選</span>
+              </div>
               {items.map((item) => {
                 const isUpdating = updatingIds.has(item.id);
                 const isRemoving = removingIds.has(item.id);
@@ -202,9 +273,19 @@ export default function CartPage() {
                 const tierHint = getNextTierHint(item);
 
                 return (
-                  <Card key={item.id} className={`transition-opacity ${isRemoving ? 'opacity-40' : ''}`}>
+                  <Card key={item.id} className={`transition-opacity ${isRemoving ? 'opacity-40' : ''} ${selectedIds.has(item.id) ? 'ring-2 ring-blue-300' : ''}`}>
                     <CardContent className="p-4">
                       <div className="flex gap-4">
+                        {/* 勾選框 */}
+                        <div className="flex items-start pt-1">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-blue-600 cursor-pointer"
+                            checked={selectedIds.has(item.id)}
+                            onChange={() => toggleSelect(item.id)}
+                            aria-label={`選取 ${item.product.name}`}
+                          />
+                        </div>
                         {/* 商品圖片 */}
                         <div className="w-20 h-20 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
                           {item.product.image ? (
