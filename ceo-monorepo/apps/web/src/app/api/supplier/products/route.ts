@@ -18,6 +18,10 @@ const createProductSchema = z.object({
   height: z.number().positive().optional(),
   weight: z.number().positive().optional(),
   stock: z.number().int().min(0).optional().default(0),
+  priceTiers: z.array(z.object({
+    minQty: z.number().int().positive('最小數量必須為正整數'),
+    price: z.number().positive('價格必須為正數'),
+  })).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -64,6 +68,13 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
+        include: {
+          product: {
+            include: {
+              priceTiers: { orderBy: { minQty: 'asc' } },
+            },
+          },
+        },
       }),
       prisma.supplierProduct.count({ where }),
     ])
@@ -150,6 +161,22 @@ export async function POST(request: NextRequest) {
             stock: data.stock ?? 0,
           },
         })
+
+        // 寫入價格階梯（TEST_MODE 路徑）
+        if (data.priceTiers && data.priceTiers.length > 0) {
+          const productId = product.productId
+          if (productId) {
+            await prisma.priceTier.createMany({
+              data: data.priceTiers.map((tier: { minQty: number; price: number }) => ({
+                productId,
+                minQty: tier.minQty,
+                price: tier.price,
+              })),
+              skipDuplicates: true,
+            })
+          }
+        }
+
         return NextResponse.json({ success: true, data: product })
       }
       return NextResponse.json({ error: '您不是供應商帳號' }, { status: 403 })
@@ -187,6 +214,21 @@ export async function POST(request: NextRequest) {
         stock: data.stock ?? 0,
       },
     })
+
+    // 寫入價格階梯
+    if (data.priceTiers && data.priceTiers.length > 0) {
+      const productId = product.productId
+      if (productId) {
+        await prisma.priceTier.createMany({
+          data: data.priceTiers.map((tier: { minQty: number; price: number }) => ({
+            productId,
+            minQty: tier.minQty,
+            price: tier.price,
+          })),
+          skipDuplicates: true,
+        })
+      }
+    }
 
     return NextResponse.json({ success: true, data: product })
   } catch (error) {
