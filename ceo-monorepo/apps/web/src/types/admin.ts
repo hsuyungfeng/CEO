@@ -116,7 +116,7 @@ export const UpdateOrderStatusSchema = z.object({
 // 訂單查詢參數 Schema
 export const OrderQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
   search: z.string().optional(),
   status: z.enum(['PENDING', 'CONFIRMED', 'SHIPPED', 'COMPLETED', 'CANCELLED']).optional(),
   userId: z.string().cuid('用戶ID格式不正確').optional(),
