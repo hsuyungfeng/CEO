@@ -16,15 +16,15 @@ export async function GET(request: NextRequest) {
     
     // 解析查詢參數
     const queryParams = {
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      search: searchParams.get('search'),
-      status: searchParams.get('status'),
-      userId: searchParams.get('userId'),
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      sortBy: searchParams.get('sortBy'),
-      sortOrder: searchParams.get('sortOrder'),
+      page: searchParams.get('page') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
+      search: searchParams.get('search') ?? undefined,
+      status: searchParams.get('status') ?? undefined,
+      userId: searchParams.get('userId') ?? undefined,
+      startDate: searchParams.get('startDate') ?? undefined,
+      endDate: searchParams.get('endDate') ?? undefined,
+      sortBy: searchParams.get('sortBy') ?? undefined,
+      sortOrder: searchParams.get('sortOrder') ?? undefined,
     };
 
     // 驗證查詢參數
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.OrderWhereInput = {};
 
     // 搜尋條件（訂單編號、用戶名稱、用戶 email）
-    if (search) {
+    if (search && search !== '') {
       where.OR = [
         { orderNo: { contains: search, mode: 'insensitive' } },
         { user: { name: { contains: search, mode: 'insensitive' } } },
@@ -61,20 +61,20 @@ export async function GET(request: NextRequest) {
     }
 
     // 狀態條件
-    if (status) {
+    if (status && status !== '') {
       where.status = status;
     }
 
     // 用戶條件
-    if (userId) {
+    if (userId && userId !== '') {
       where.userId = userId;
     }
 
     // 時間範圍條件
-    if (startDate || endDate) {
+    if ((startDate && startDate !== '') || (endDate && endDate !== '')) {
       where.createdAt = {
-        ...(startDate ? { gte: new Date(startDate) } : {}),
-        ...(endDate ? { lte: new Date(endDate) } : {}),
+        ...(startDate && startDate !== '' ? { gte: new Date(startDate) } : {}),
+        ...(endDate && endDate !== '' ? { lte: new Date(endDate) } : {}),
       };
     }
 
@@ -147,14 +147,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: formattedOrders,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page * limit < total,
-        hasPrevPage: page > 1,
+      data: {
+        orders: formattedOrders,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page * limit < total,
+          hasPrevPage: page > 1,
+        },
       },
     } as ApiResponse);
 
