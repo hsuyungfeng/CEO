@@ -1,3 +1,6 @@
+// 在最前面加載環境變數
+require('dotenv').config({ path: '.env.local' })
+
 const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')

@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 更新購物車項目數量
+    // 更新購物車項目數量（quantity 此時必然有值）
     const updatedCartItem = await prisma.cartItem.update({
       where: { id },
       data: { quantity },

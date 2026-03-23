@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { RefreshCw, Search } from 'lucide-react';
 import SuppliersTable from '@/components/admin/suppliers-table';
 import CreateSupplierDialog from '@/components/admin/create-supplier-dialog';
 
@@ -30,29 +31,26 @@ export default function SuppliersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  async function fetchSuppliers() {
+    try {
+      setLoading(true);
+      const url = new URL('/api/suppliers', window.location.origin);
+      if (statusFilter) url.searchParams.append('status', statusFilter);
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const suppliersList = Array.isArray(data) ? data : (data.data || data.suppliers || []);
+      setSuppliers(suppliersList);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '無法載入供應商列表');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const fetchSuppliers = async () => {
-      try {
-        setLoading(true);
-        const url = new URL('/api/suppliers', window.location.origin);
-        if (statusFilter && statusFilter !== '') url.searchParams.append('status', statusFilter);
-
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-          throw new Error(`Failed to fetch suppliers: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('[SuppliersPage] Fetched suppliers:', data);
-
-        const suppliersList = Array.isArray(data) ? data : (data.data || data.suppliers || []);
-        setSuppliers(suppliersList);
-      } catch (err) {
-        console.error('[SuppliersPage] Error fetching suppliers:', err);
-        setError(err instanceof Error ? err.message : '無法載入供應商列表');
-      } finally {
-        setLoading(false);
-      }
+    const doFetch = async () => {
+      fetchSuppliers();
     };
 
     fetchSuppliers();

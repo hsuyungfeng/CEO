@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { enhancedCSRFProtection } from '@/lib/csrf-protection-enhanced';
-import { auditLogger } from '@/lib/audit-logger';
-import { logger } from '@/lib/logger';
 
 /**
  * CSRF middleware for state-changing requests
