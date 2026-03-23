@@ -2,8 +2,25 @@
 
 ## 2026-03-23
 
+### 管理員訂單 API 修復與驗證 ✅
+**時間**：下午進行中
+
+#### 已完成
+- ✅ GET `/api/admin/orders` 端點修復
+  - 修正查詢參數預設值處理
+  - 修正回應格式：{ success: true, data: { orders: [...], pagination: {...} } }
+  - API 測試通過，返回正確的訂單列表
+  - commit: 6763cef
+
+#### 驗收狀態
+- ✅ 訂單 API 響應格式正確
+- ✅ 分頁和排序參數正常運作
+- ⏳ 管理員訂單頁面前端整合驗證中
+
+---
+
 ### 開發環境啟動與修復 ✅
-**時間**：上午 10:06 AM - 下午進行中
+**時間**：上午 10:06 AM
 
 #### 已完成
 - ✅ 會話初始化完成
@@ -22,16 +39,17 @@
 - 伺服器狀態：🟢 運行中 (http://localhost:3000)
 - 認證：✅ TEST_MODE 啟用，管理員自動登入
 
-#### 待辦事項 📋
-1. **創建 `/api/admin/orders` 端點** - 管理員訂單頁面調用此 API
-   - 接受查詢參數：`limit`, `sortBy`, `sortOrder`
-   - 返回格式：`{ success: true, data: { orders: [...] } }`
-   - 狀態碼 400：無法修復的驗證/查詢錯誤
-   - 相關文件：`ceo-monorepo/apps/web/src/app/admin/orders/page.tsx` (第 75 行)
+#### 已完成 ✅
+- ✅ **GET `/api/admin/orders` 端點修復** - 查詢參數和回應格式已修正
+  - 修正查詢參數預設值處理 (使用 ?? undefined)
+  - 修正 API 回應格式：data 包含 orders 陣列
+  - 測試通過：API 端點正常返回訂單列表
+  - commit: 6763cef
 
-2. **創建 `/api/admin/orders/[id]` 路由** - 單個訂單操作
-   - PATCH：修改訂單狀態 (PENDING → CONFIRMED)
-   - 相關文件：`ceo-monorepo/apps/web/src/app/admin/orders/page.tsx` (第 91 行)
+- ✅ **PATCH `/api/admin/orders/[id]` 端點** - 已實裝
+  - 可修改訂單狀態 (PENDING → CONFIRMED 等)
+  - 支援審計日誌和事務處理
+  - 已驗收使用中
 
 #### 最近完成工作（#S400-S401）
 1. **購物車頁面強化** (Mar 20)
