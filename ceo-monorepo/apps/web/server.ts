@@ -1,11 +1,9 @@
-// 在最前面加載環境變數
-require('dotenv').config({ path: '.env.local' })
-
-const { createServer } = require('http')
-const { parse } = require('url')
-const next = require('next')
-const { NotificationWebSocketServer } = require('./src/lib/websocket-server')
-const { setWebSocketServer } = require('./src/lib/notification-service')
+import 'dotenv/config'
+import { createServer } from 'http'
+import { parse } from 'url'
+import next from 'next'
+import { NotificationWebSocketServer } from './src/lib/websocket-server'
+import { setWebSocketServer } from './src/lib/notification-service'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -28,7 +26,7 @@ app.prepare().then(() => {
 
   // 創建 WebSocket 伺服器
   const wsServer = new NotificationWebSocketServer(server)
-  
+
   // 設置 WebSocket 伺服器到通知服務
   setWebSocketServer(wsServer)
 
