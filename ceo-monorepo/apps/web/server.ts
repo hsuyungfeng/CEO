@@ -33,7 +33,12 @@ app.prepare().then(() => {
           try {
             const { userId, notification } = JSON.parse(body)
             if (globalWsServer) {
-              const sentCount = await globalWsServer.sendNotificationToUser(userId, notification)
+              // 確保 createdAt 是 Date 對象
+              const notificationWithDate = {
+                ...notification,
+                createdAt: new Date(notification.createdAt)
+              }
+              const sentCount = await globalWsServer.sendNotificationToUser(userId, notificationWithDate)
               res.writeHead(200, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ success: true, sentCount }))
             } else {
