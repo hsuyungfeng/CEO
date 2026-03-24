@@ -61,6 +61,10 @@ export class NotificationIntegration {
         title: '訂單已創建',
         content: `您的訂單 #${orderNo} 已成功創建，正在等待處理。`,
       },
+      CONFIRMED: {
+        title: '訂單已確認',
+        content: `您的訂單 #${orderNo} 已確認，準備發貨。`,
+      },
       PROCESSING: {
         title: '訂單處理中',
         content: `您的訂單 #${orderNo} 正在處理中。`,
@@ -68,6 +72,10 @@ export class NotificationIntegration {
       SHIPPED: {
         title: '訂單已發貨',
         content: `您的訂單 #${orderNo} 已發貨。`,
+      },
+      COMPLETED: {
+        title: '訂單已完成',
+        content: `您的訂單 #${orderNo} 已完成。`,
       },
       DELIVERED: {
         title: '訂單已送達',

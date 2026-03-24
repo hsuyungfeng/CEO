@@ -44,18 +44,9 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const [notifications, setNotifications] = useState<NotificationData[]>([])
   const [wsManager] = useState(() => WebSocketManager.getInstance())
 
-  // 在開發環境中禁用 WebSocket（避免控制台噪音）
-  const isDevMode = process.env.NODE_ENV === 'development'
-  const wsEnabled = !isDevMode
-
   const connect = () => {
-    if (!wsEnabled) {
-      console.log('[WebSocket] 開發模式已禁用')
-      return
-    }
     if (status === 'authenticated' && session?.user?.id) {
-      const token = session.accessToken || ''
-      wsManager.connect(token)
+      wsManager.connect(session.user.id)  // 直接傳 userId
     }
   }
 

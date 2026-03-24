@@ -93,15 +93,11 @@ export class NotificationWebSocketServer {
 
   private async handleAuth(clientId: string, ws: WebSocket, token: string) {
     try {
-      const secret = process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET
-      if (!secret) {
-        throw new Error('JWT 密鑰未設定')
-      }
+      // token 直接是 userId（來自 session.user.id）
+      const userId = token
 
-      const decoded = verify(token, secret) as { userId: string; sessionId: string }
-      
       const user = await prisma.user.findUnique({
-        where: { id: decoded.userId }
+        where: { id: userId }
       })
 
       if (!user) {
@@ -110,21 +106,21 @@ export class NotificationWebSocketServer {
 
       this.clients.set(clientId, {
         ws,
-        userId: decoded.userId,
-        sessionId: decoded.sessionId
+        userId,
+        sessionId: 'ws-' + clientId  // WebSocket 連線 ID 作為 session ID
       })
 
-      console.log(`用戶 ${decoded.userId} 驗證成功，客戶端 ID: ${clientId}`)
+      console.log(`用戶 ${userId} 驗證成功，客戶端 ID: ${clientId}`)
 
       ws.send(JSON.stringify({
         type: 'auth_success',
-        userId: decoded.userId,
+        userId,
         timestamp: new Date().toISOString()
       }))
 
       const unreadCount = await prisma.notification.count({
         where: {
-          userId: decoded.userId,
+          userId,
           isRead: false
         }
       })

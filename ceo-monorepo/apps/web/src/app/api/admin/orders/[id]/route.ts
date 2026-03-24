@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-auth';
 import { UpdateOrderStatusSchema, ApiResponse } from '@/types/admin';
+import { NotificationIntegration } from '@/lib/notification-integration';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -253,6 +254,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         return order;
       });
 
+      // 非同步發送通知（不阻塞回應）
+      NotificationIntegration.sendOrderStatusNotification(
+        existingOrder.userId,
+        id,
+        existingOrder.orderNo ?? id,
+        newStatus
+      ).catch(err => console.error('通知發送失敗:', err))
+
       return NextResponse.json(
         {
           success: true,
@@ -276,6 +285,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         note: adminNote ? `${existingOrder.note ? existingOrder.note + '\n' : ''}[管理員備註: ${adminNote}]` : existingOrder.note,
       },
     });
+
+    // 非同步發送通知（不阻塞回應）
+    NotificationIntegration.sendOrderStatusNotification(
+      existingOrder.userId,
+      id,
+      existingOrder.orderNo ?? id,
+      newStatus
+    ).catch(err => console.error('通知發送失敗:', err))
 
     return NextResponse.json(
       {
