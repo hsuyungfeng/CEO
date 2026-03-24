@@ -17,6 +17,14 @@ export function setWebSocketServer(server: NotificationWebSocketServer) {
   console.log('[notification-service] WebSocket 伺服器已設置，websocketServer:', !!websocketServer)
 }
 
+/**
+ * 取得 WebSocket 伺服器實例 (支援動態初始化)
+ * 使用 getter 而非直接參考，確保在 Route Handler 中能取得最新的實例
+ */
+export function getWebSocketServer(): NotificationWebSocketServer | null {
+  return websocketServer
+}
+
 // 電子郵件服務實例
 const emailService = new EmailService()
 
@@ -59,9 +67,10 @@ export class NotificationService {
     // 開發模式：跳過資料庫，直接發送 WebSocket 通知用於測試
     if (process.env.WEBSOCKET_DEV_MODE === 'true') {
       console.log('[WebSocket Dev Mode] 跳過資料庫，直接發送通知')
-      if (websocketServer && channels.includes(NotificationChannel.IN_APP)) {
+      const ws = getWebSocketServer()
+      if (ws && channels.includes(NotificationChannel.IN_APP)) {
         try {
-          const sentCount = await websocketServer.sendNotificationToUser(userId, {
+          const sentCount = await ws.sendNotificationToUser(userId, {
             id: 'test-' + Date.now(),
             type: type,
             title,
@@ -83,6 +92,8 @@ export class NotificationService {
           console.error('通過 WebSocket 發送測試通知時發生錯誤:', error)
           throw error
         }
+      } else {
+        console.warn('[WebSocket Dev Mode] WebSocket 伺服器尚未初始化或管道不包含 IN_APP')
       }
       return null
     }
@@ -131,9 +142,10 @@ export class NotificationService {
     }
 
     // 通過 WebSocket 發送即時通知
-    if (websocketServer && channels.includes(NotificationChannel.IN_APP)) {
+    const ws = getWebSocketServer()
+    if (ws && channels.includes(NotificationChannel.IN_APP)) {
       try {
-        const sentCount = await websocketServer.sendNotificationToUser(userId, {
+        const sentCount = await ws.sendNotificationToUser(userId, {
           ...notification,
           message: content,
           createdAt: notification.createdAt

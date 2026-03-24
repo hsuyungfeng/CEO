@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { NotificationIntegration } from '@/lib/notification-integration'
+import { getWebSocketServer } from '@/lib/notification-service'
 
 /**
  * 測試端點 - 發送測試通知以驗證 WebSocket 整合
@@ -9,6 +10,10 @@ import { NotificationIntegration } from '@/lib/notification-integration'
 export async function POST(request: Request) {
   try {
     console.log('[test-notification] 收到測試通知請求')
+
+    // Debug: Check WebSocket server availability
+    const wsServer = getWebSocketServer()
+    console.log('[test-notification] WebSocket 伺服器可用?:', !!wsServer)
 
     const session = await auth()
     console.log('[test-notification] Session:', session?.user?.id)
@@ -39,7 +44,8 @@ export async function POST(request: Request) {
       userId: session.user.id,
       orderNo,
       status,
-      result: result ? '已創建' : '跳過'
+      result: result ? '已創建' : '跳過',
+      wsAvailable: !!wsServer
     })
   } catch (error) {
     console.error('[test-notification] 發送錯誤:', error)
