@@ -12,6 +12,8 @@ const port = parseInt(process.env.PORT || '3000', 10)
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
 
+let globalWsServer: NotificationWebSocketServer | null = null
+
 app.prepare().then(() => {
   const server = createServer(async (req: any, res: any) => {
     try {
@@ -20,6 +22,29 @@ app.prepare().then(() => {
       // WebSocket 升級請求不應通過 Next.js handle
       // 讓 WebSocketServer 的 'connection' 事件處理
       if (req.url.startsWith('/ws/')) {
+        return
+      }
+
+      // 內部端點：用於在 Route Handler 無法直接訪問 WebSocket 伺服器時推送通知
+      if (req.url.startsWith('/api/_internal/push-notification') && req.method === 'POST') {
+        let body = ''
+        req.on('data', chunk => body += chunk)
+        req.on('end', async () => {
+          try {
+            const { userId, notification } = JSON.parse(body)
+            if (globalWsServer) {
+              const sentCount = await globalWsServer.sendNotificationToUser(userId, notification)
+              res.writeHead(200, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ success: true, sentCount }))
+            } else {
+              res.writeHead(500, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'WebSocket 伺服器不可用' }))
+            }
+          } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: String(error) }))
+          }
+        })
         return
       }
 
@@ -40,6 +65,9 @@ app.prepare().then(() => {
   console.log('正在設置 WebSocket 伺服器到通知服務...')
   setWebSocketServer(wsServer)
   console.log('✅ WebSocket 伺服器已設置到通知服務')
+
+  // 保存全局 WebSocket 伺服器實例，供內部路由使用
+  globalWsServer = wsServer
 
   server.on('error', (err: any) => {
     console.error('伺服器錯誤:', err)
