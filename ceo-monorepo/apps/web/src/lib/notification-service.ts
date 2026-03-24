@@ -12,7 +12,9 @@ import { NotificationWebSocketServer } from './websocket-server'
 let websocketServer: NotificationWebSocketServer | null = null
 
 export function setWebSocketServer(server: NotificationWebSocketServer) {
+  console.log('[notification-service] 接收到 WebSocket 伺服器實例:', !!server)
   websocketServer = server
+  console.log('[notification-service] WebSocket 伺服器已設置，websocketServer:', !!websocketServer)
 }
 
 // 電子郵件服務實例
@@ -53,6 +55,37 @@ export class NotificationService {
    */
   static async createNotification(input: CreateNotificationInput) {
     const { userId, type, title, content, data, relatedId, relatedType, channels = [NotificationChannel.IN_APP] } = input
+
+    // 開發模式：跳過資料庫，直接發送 WebSocket 通知用於測試
+    if (process.env.WEBSOCKET_DEV_MODE === 'true') {
+      console.log('[WebSocket Dev Mode] 跳過資料庫，直接發送通知')
+      if (websocketServer && channels.includes(NotificationChannel.IN_APP)) {
+        try {
+          const sentCount = await websocketServer.sendNotificationToUser(userId, {
+            id: 'test-' + Date.now(),
+            type: type,
+            title,
+            message: content,
+            createdAt: new Date(),
+            read: false
+          })
+          console.log(`WebSocket 測試通知已發送給用戶 ${userId}，${sentCount} 個客戶端`)
+          return {
+            id: 'test-' + Date.now(),
+            type,
+            title,
+            content,
+            userId,
+            read: false,
+            isRead: false
+          } as any
+        } catch (error) {
+          console.error('通過 WebSocket 發送測試通知時發生錯誤:', error)
+          throw error
+        }
+      }
+      return null
+    }
 
     // 檢查用戶通知偏好
     const preference = await prisma.notificationPreference.findUnique({

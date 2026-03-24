@@ -96,12 +96,18 @@ export class NotificationWebSocketServer {
       // token 直接是 userId（來自 session.user.id）
       const userId = token
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId }
-      })
+      // 開發模式：暫時信任 userId，跳過資料庫查詢以測試 WebSocket
+      // TODO: 移除此臨時繞過，修復資料庫連接後恢復查詢
+      if (process.env.NODE_ENV === 'development' && process.env.SKIP_USER_LOOKUP !== 'false') {
+        console.log(`[開發模式] 跳過用戶查詢，直接驗證 userId: ${userId}`)
+      } else {
+        const user = await prisma.user.findUnique({
+          where: { id: userId }
+        })
 
-      if (!user) {
-        throw new Error('用戶不存在')
+        if (!user) {
+          throw new Error('用戶不存在')
+        }
       }
 
       this.clients.set(clientId, {
@@ -118,12 +124,19 @@ export class NotificationWebSocketServer {
         timestamp: new Date().toISOString()
       }))
 
-      const unreadCount = await prisma.notification.count({
-        where: {
-          userId,
-          isRead: false
-        }
-      })
+      // 開發模式：略過未讀計數查詢
+      let unreadCount = 0
+      if (process.env.NODE_ENV === 'development' && process.env.SKIP_USER_LOOKUP !== 'false') {
+        console.log(`[開發模式] 設定未讀計數為 0`)
+        unreadCount = 0
+      } else {
+        unreadCount = await prisma.notification.count({
+          where: {
+            userId,
+            isRead: false
+          }
+        })
+      }
 
       ws.send(JSON.stringify({
         type: 'unread_count',

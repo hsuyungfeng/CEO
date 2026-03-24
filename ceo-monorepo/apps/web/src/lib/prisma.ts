@@ -174,25 +174,27 @@ if (!globalForPrisma.prisma) {
     })
   }
 
-  // 添加連接池健康檢查
-  setInterval(async () => {
-    try {
-      const poolStats = {
-        totalCount: pool.totalCount,
-        idleCount: pool.idleCount,
-        waitingCount: pool.waitingCount,
+  // 添加連接池健康檢查（開發模式暫時禁用以測試 WebSocket）
+  if (process.env.NODE_ENV !== 'development' || process.env.ENABLE_DB_HEALTH_CHECK === 'true') {
+    setInterval(async () => {
+      try {
+        const poolStats = {
+          totalCount: pool.totalCount,
+          idleCount: pool.idleCount,
+          waitingCount: pool.waitingCount,
+        }
+
+        if (poolStats.waitingCount > 5) {
+          logger.warn(poolStats, '資料庫連接池壓力過高')
+        }
+
+        // 執行簡單的健康檢查查詢
+        await prismaInstance.$queryRaw`SELECT 1`
+      } catch (error) {
+        logger.error('資料庫健康檢查失敗:', error)
       }
-      
-      if (poolStats.waitingCount > 5) {
-        logger.warn(poolStats, '資料庫連接池壓力過高')
-      }
-      
-      // 執行簡單的健康檢查查詢
-      await prismaInstance.$queryRaw`SELECT 1`
-    } catch (error) {
-      logger.error('資料庫健康檢查失敗:', error)
-    }
-  }, 60000) // 每分鐘檢查一次
+    }, 60000) // 每分鐘檢查一次
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.prisma = prismaInstance

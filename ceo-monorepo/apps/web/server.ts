@@ -25,10 +25,14 @@ app.prepare().then(() => {
   })
 
   // 創建 WebSocket 伺服器
+  console.log('即將創建 WebSocket 伺服器...')
   const wsServer = new NotificationWebSocketServer(server)
+  console.log('WebSocket 伺服器已創建:', wsServer)
 
   // 設置 WebSocket 伺服器到通知服務
+  console.log('正在設置 WebSocket 伺服器到通知服務...')
   setWebSocketServer(wsServer)
+  console.log('✅ WebSocket 伺服器已設置到通知服務')
 
   server.on('error', (err: any) => {
     console.error('伺服器錯誤:', err)
