@@ -16,6 +16,13 @@ app.prepare().then(() => {
   const server = createServer(async (req: any, res: any) => {
     try {
       const parsedUrl = parse(req.url, true)
+
+      // WebSocket 升級請求不應通過 Next.js handle
+      // 讓 WebSocketServer 的 'connection' 事件處理
+      if (req.url.startsWith('/ws/')) {
+        return
+      }
+
       await handle(req, res, parsedUrl)
     } catch (err) {
       console.error('伺服器錯誤:', err)
