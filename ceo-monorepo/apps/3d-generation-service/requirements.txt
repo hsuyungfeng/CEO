@@ -1,0 +1,30 @@
+# TRELLIS.2 3D Generation Service
+# Python 3.10+ 推薦
+
+# ML 框架
+torch==2.3.1
+torchvision==0.18.1
+transformers==4.38.0
+
+# TRELLIS.2 模型（從 HuggingFace 拉取）
+# 注意：需手動安裝 TRELLIS v1.3.1 模型
+#       從 https://huggingface.co/VAST-AI-Research/TRELLIS-v1.3.1 下載
+
+# Web 框架
+flask==3.0.0
+flask-cors==4.0.0
+
+# 圖像處理
+pillow==10.1.0
+opencv-python==4.8.1.78
+numpy==1.24.3
+
+# 上傳/下載
+requests==2.31.0
+python-multipart==0.0.6
+
+# 效能監控
+psutil==5.9.6
+
+# 日誌紀錄
+python-dotenv==1.0.0
