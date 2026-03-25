@@ -183,6 +183,10 @@ model Product {
   purchaseTemplateItems   PurchaseTemplateItem[]
   userPurchaseHistories   UserPurchaseHistory[]
 
+  // Phase 15: 3D 模型生成關聯
+  product3DModel Product3DModel?
+  generationQueues GenerationQueue[]
+
   @@map("products")
 }
 
@@ -1061,6 +1065,24 @@ enum NotificationChannel {
   ALL // 所有渠道
 }
 
+// ============ Phase 15: 3D 生成系統 ============
+
+// 3D 模型狀態
+enum Product3DModelStatus {
+  PENDING    // 待處理
+  GENERATING // 生成中
+  COMPLETED  // 完成
+  FAILED     // 失敗
+}
+
+// 生成隊列狀態
+enum GenerationQueueStatus {
+  QUEUED     // 已排隊
+  PROCESSING // 處理中
+  COMPLETE   // 完成
+  ERROR      // 錯誤
+}
+
 // 通知主表
 model Notification {
   id        String   @id @default(cuid())
@@ -1210,6 +1232,94 @@ model SmsCallbackLog {
   @@index([createdAt])
   @@index([processed])
   @@map("sms_callback_logs")
+}
+
+// ============ Phase 15: 3D 模型存儲 ============
+
+// 3D 模型記錄（每個產品最多一個）
+model Product3DModel {
+  id String @id @default(cuid())
+
+  // 關聯
+  productId String @unique
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // 來源圖像
+  sourceImageUrl String
+
+  // 生成狀態
+  status Product3DModelStatus @default(PENDING)
+
+  // 模型檔案
+  modelUrlGLB  String?         // GLB 格式（Web）
+  modelUrlUSDZ String?         // USDZ 格式（iOS AR）
+
+  // PBR 材質資訊
+  pbrMetadata Json?            // {has_textures: bool, resolution: string}
+
+  // 時間戳
+  generatedAt DateTime?
+  expiresAt   DateTime?        // 模型過期時間（可選）
+
+  // 審計
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([generatedAt])
+  @@map("product_3d_models")
+}
+
+// 3D 生成隊列
+model GenerationQueue {
+  id String @id @default(cuid())
+
+  // 關聯
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // 隊列狀態
+  status        GenerationQueueStatus @default(QUEUED)
+  priority      Int                   @default(5) // 1-10，10 最高優先級
+
+  // 重試邏輯
+  retriesCount Int @default(0)
+  maxRetries   Int @default(3)
+
+  // 錯誤追蹤
+  errorMessage String?
+
+  // 時間戳
+  createdAt  DateTime @default(now())
+  startedAt  DateTime?
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([productId])
+  @@map("generation_queues")
+}
+
+// 生成審計日誌
+model GenerationLog {
+  id String @id @default(cuid())
+
+  // 關聯
+  productId String
+
+  // 狀態變更
+  previousStatus GenerationQueueStatus?
+  newStatus      GenerationQueueStatus
+  metadata       Json?                 // 額外資訊
+
+  // 時間戳
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+  @@index([newStatus])
+  @@map("generation_logs")
 }
 
 
